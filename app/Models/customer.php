@@ -12,17 +12,28 @@ class customer extends Model
     use HasFactory;
     protected $table = 'customers';
 
-    protected $fillable = ['id','customer_name','customer_phone','customer_area','customer_email','note','acc_client_id'];
+    protected $fillable = [
+        'id',
+        'customer_name',
+        'customer_phone',
+        'customer_area',
+        'note',
+        'acc_client_id'];
 
     //protected $guarded = ['id'];
 
-    public function salseBill():HasMany
+    public function Bill():HasMany
     {
-        return $this->hasMany(salseBill::class, 'customer_id','id');
+        return $this->hasMany(Bill::class, 'customer_id','id');
     }
     public function account()
     {
         return $this->belongsTo(Account::class, 'acc_client_id'); // اسم المفتاح الخارجي
+    }
+
+    public function bondRelations():HasMany
+    {
+        return $this->hasMany(BondRelation::class);
     }
 
     public static function boot()

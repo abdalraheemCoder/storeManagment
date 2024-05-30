@@ -10,11 +10,15 @@ class driver extends Model
     use HasFactory;
     protected $table = 'drivers';
 
-    protected $fillable = ['driver_name','driver_phone','driver_address','note'];
+    protected $fillable = [
+        'driver_name',
+        'driver_phone',
+        'driver_address',
+        'note'];
 
     protected $guarded = ['driver_ID'];
 
-    public function sales_Bills()
+    public function Bills()
     {
         return $this->hasMany(driver::class, 'driver_id');
     }

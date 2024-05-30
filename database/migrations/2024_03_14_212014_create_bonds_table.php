@@ -15,8 +15,9 @@ return new class extends Migration
             $table->id();
             //$table->foreignId('account_id')->constrained('accounts');
             $table->double('value');
-            $table->boolean('bond_type');
+            $table->enum('type',['receipt' , 'payment']);
             $table->longText('note')->nullable();
+            //$table->foreignId('bondRel_id')->constrained('bond_relations');
             $table->timestamps();
         });
     }

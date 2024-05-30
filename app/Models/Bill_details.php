@@ -10,18 +10,23 @@ class Bill_details extends Model
 {
     use HasFactory;
     protected $table = 'bills_details';
-
+    const type_BUY = "buy" ;
+    const type_SALE = "sale";
     protected $fillable = [
         'price',
+        'quantity',
         'discount',
         'note',
         'unit_id',
         'material_id',
-        'salse_bill_id',
-        'buy_bill_id'];
+        'bill_id',
+        'type',
+    ];
 
-        protected $guarded = ['Bill_type'];
-
+    public function bill()
+    {
+        return $this->belongsTo(Bill::class);
+    }
         public function materials() :BelongsTo
         {
             return $this->belongsTo(material::class);

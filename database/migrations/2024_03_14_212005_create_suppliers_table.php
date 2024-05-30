@@ -16,7 +16,6 @@ return new class extends Migration
             $table->string('supplier_name');
             $table->integer('supplier_phone')->nullable();
             $table->string('supplier_company')->nullable();
-            $table->string('supplier_email')->unique();
             //table->foreignId('acc_supplier_id')->constrained('accounts');
             $table->longText('note')->nullable();
             $table->timestamps();

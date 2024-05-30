@@ -11,11 +11,8 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('salse_bills', function (Blueprint $table) {
-            $table->foreignId('customer_id')->constrained('customers');
-            $table->foreignId('driver_id')->constrained('drivers');
-          
-            //$table->string('billType')->default('salse');
+        Schema::table('bonds', function (Blueprint $table) {
+            $table->foreignId('bondRel_id')->constrained('bond_relations');
         });
     }
 
@@ -24,7 +21,7 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('salse_bills', function (Blueprint $table) {
+        Schema::table('bonds', function (Blueprint $table) {
             //
         });
     }

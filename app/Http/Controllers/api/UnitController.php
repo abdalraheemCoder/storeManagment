@@ -14,17 +14,11 @@ class UnitController extends RoutingController
 {
     use ApiResponseTrait;
 
-
-
-
-
     public function index()
     {
         $unit = unit::get();
         return $this->apiresponse($unit,'This all unit ',200);
     }
-
-
 
     public function store(Request $request)
     {
@@ -36,15 +30,17 @@ class UnitController extends RoutingController
         if ($validator->fails()) {
             return $this->apiresponse(null,$validator->errors(),400);
         }
-
-
-        $material = Material::latest()->first();
-        $unit = unit::create([
-            'unit_name'=>$request->unit_name,
-            'unit_equal'=>$request->unit_equal,
-            'unit_mat_id'=>$material->id
+        
+        $materialId = $request->unit_mat_id ? $request->unit_mat_id : Material::latest()->first()->id;
+        $totalMaterials = Material::count();
+        if ($request->unit_mat_id && $request->unit_mat_id > $totalMaterials) {
+            return $this->apiresponse(null, 'Invalid material ', 400);
+        }
+        $unit = Unit::create([
+            'unit_name' => $request->unit_name,
+            'unit_equal' => $request->unit_equal,
+            'unit_mat_id' => $materialId
         ]);
-
 
         if ($unit) {
             return $this->apiresponse($unit,'This unit is Save ',201);
@@ -79,6 +75,22 @@ class UnitController extends RoutingController
             return $this->apiresponse(null,$validator->errors(),400);
         }
 
+        if($materialId = $request->unit_mat_id){
+            $materialId = $request->unit_mat_id;
+            $material = Material::find($materialId);
+
+            if (!$material) {
+                return response()->json([
+                    'error' => 'Material not found'
+                ], 404);
+            }else{
+            $unit = Unit::create([
+                'unit_name' => $request->unit_name,
+                'unit_equal' => $request->unit_equal,
+                'unit_mat_id' => $material->id
+            ]);
+        }
+        }
         $unit = unit::find($id);
         if (!$id) {
           return $this->apiresponse(null,'This id Not found  ',401);
@@ -87,6 +99,7 @@ class UnitController extends RoutingController
         if ( !$unit) {
             return $this->apiresponse(null,' This unit Not found to updated ',401);
          }
+
 
 
          $unit->update($request->all());

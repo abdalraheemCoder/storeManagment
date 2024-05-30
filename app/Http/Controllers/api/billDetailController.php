@@ -6,7 +6,8 @@ use App\Models\Bill_details;
 use App\Models\buyBill;
 use Illuminate\Http\Request;
 use App\Traits\ApiResponseTrait;
-use App\Models\salseBill;
+use App\Models\Bill;
+use App\Models\unit;
 use Illuminate\Routing\Controller as RoutingController;
 use Illuminate\Support\Facades\Validator;
 use Symfony\Component\HttpKernel\Controller\ControllerResolver;
@@ -19,7 +20,7 @@ class billDetailController extends RoutingController
     public function index()
     {
         $bill_detil = Bill_details::get();
-        return $this->apiresponse($bill_detil,'This all salseBill ',200);
+        return $this->apiresponse($bill_detil,'This all Bill ',200);
     }
 
 
@@ -57,38 +58,63 @@ class billDetailController extends RoutingController
             return $this->apiresponse(null,$validator->errors(),400);
         }
 
-        $sasle_bill = salseBill::latest()->first();
-        $buy_bill = buyBill::latest()->first();
+        $Bill = Bill::latest()->first();
+        //$buy_bill = buyBill::latest()->first();
 
         //$bill_detil = Bill_details::create($request->all());
-        if ($sasle_bill->created_at > $buy_bill-> created_at) {
-            {
-                $bill_detil = Bill_details::create([
-                    'price'=>$request->price,
-                    'unit_id'=>$request->unit_id,
-                    'material_id'=>$request->material_id,
-                    'salse_bill_id'=>$sasle_bill->id
-                ]);}
+        $unitId = $request->unit_id;
+        $unit = Unit::where('unit_mat_id', $request->material_id)->where('id', $unitId)->first();
+
+        if (!$unit) {
+            return response()->json([
+                'error' => 'Unit not found for the given material'
+            ], 404);
         }
 
-        else{
-            $bill_detil = Bill_details::create([
+        if ($Bill->typeOfbill == Bill::typeOfbill_SALE) {
+            $bill_detail= Bill_details::create([
+                'price' => $request->price,
+                'quantity' => $request->quantity,
+                'material_id' => $request->material_id,
+                'unit_id' => $unit->id,
+                'bill_id' => $Bill->id,
+                'type' => 'sale'
+            ]);
+                if ($bill_detail) {
+                    return $this->apiresponse($bill_detail,'This bill_detil is Save ',201);
+
+                }
+                return $this->apiresponse(null,'This bill_detil Not Save ',400);
+
+      }
+        elseif($Bill->typeOfbill ==Bill::typeOfbill_BUY ){
+            $bill_detail = Bill_details::create([
                 'price'=>$request->price,
+                'quantity'=>$request->quantity,
                 'unit_id'=>$request->unit_id,
                 'material_id'=>$request->material_id,
-                'buy_bill_id'=>$buy_bill->id
-            ]);}
+                'bill_id'=>$Bill->id,
+                'type'=>'buy'
+            ]);
+
+            if ($bill_detail) {
+                return $this->apiresponse($bill_detail,'This bill_detil is Save ',201);
+
+            }
+            return $this->apiresponse(null,'This bill_detil Not Save ',400);
 
 
-
-        if ($bill_detil) {
-            return $this->apiresponse($bill_detil,'This bill_detil is Save ',201);
-
-        }
-        return $this->apiresponse(null,'This bill_detil Not Save ',400);
     }
+    $billDetails = Bill_details::where('bill_id', $Bill->id)->get();
+    $totalPrice = $billDetails->sum('price');
+    $totalQuantity = $billDetails->sum('quantity');
 
 
+    $Bill->price = $totalPrice;
+    $Bill->quantity = $totalQuantity;
+    $Bill->save();
+
+}
 
 
     public function update(Request $request, string $id)
@@ -131,7 +157,7 @@ class billDetailController extends RoutingController
         }
 
         if ( !$bill_detil) {
-            return $this->apiresponse(null,'This salsebill_detilBill Not found to deleted ',401);
+            return $this->apiresponse(null,'This Bill_detilBill Not found to deleted ',401);
         }
 
         $bill_detil->delete($id);

@@ -11,7 +11,14 @@ class unit extends Model
     use HasFactory;
     protected $table = 'units';
 
-    protected $fillable = ['unit_name','unit_equal','unitSalse_price','unitbuy_price','unit_mat_id'];
+    protected $fillable = [
+        'unit_name',
+        'unit_equal',
+        'unitSalse_price',
+        'unitbuy_price',
+        'unit_mat_id',
+        'Quantity',
+        'Quan_return'];
 
     protected $guarded = ['unit_ID'];
 

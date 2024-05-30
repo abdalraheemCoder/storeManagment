@@ -14,12 +14,13 @@ return new class extends Migration
         Schema::create('bills_details', function (Blueprint $table) {
             $table->id();
             $table->integer('price')->default(0);
+            $table->integer('quantity')->default(1);
             $table->integer('discount')->default(0);
             $table->longText('note');
             $table->foreignId('unit_id')->constrained('units');
             $table->foreignId('material_id')->constrained('materials');
-            $table->foreignId('salse_bill_id')->constrained('salse_bills');
-            $table->foreignId('buy_bill_id')->constrained('buy_bills');
+            $table->foreignId('bill_id')->constrained('bills');
+            $table->enum('type', ['buy', 'sale']);
             $table->timestamps();
         });
     }

@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class supplier extends Model
@@ -11,11 +12,16 @@ class supplier extends Model
     use HasFactory;
     protected $table = 'suppliers';
 
-    protected $fillable = ['supplier_name','supplier_phone','supplier_company','supplier_email','note','acc_supplier_id'];
+    protected $fillable = [
+        'supplier_name',
+        'supplier_phone',
+        'supplier_company',
+        'note',
+        'acc_supplier_id'];
 
 
-    public function buy_bills():HasOne{
-        return $this->hasOne(buyBill::class,'supplier_id');
+    public function bills():HasOne{
+        return $this->hasOne(Bill::class,'supplier_id');
     }
 
     public function account()
@@ -23,6 +29,10 @@ class supplier extends Model
         return $this->belongsTo(Account::class, 'acc_supplier_id');
     }
 
+    public function bondRelations():HasMany
+    {
+        return $this->hasMany(BondRelation::class);
+    }
     public static function boot()
     {
         parent::boot();

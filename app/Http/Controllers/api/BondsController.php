@@ -7,6 +7,8 @@ use App\Http\Controllers\Controller;
 use App\Models\Account;
 use Illuminate\Http\Request;
 use App\Models\Bond;
+use App\Models\Bill;
+use App\Models\BondRelation;
 use Illuminate\Routing\Controller as RoutingController;
 use Illuminate\Support\Facades\Validator;
 
@@ -46,18 +48,18 @@ class BondsController extends RoutingController
         $Bonds = Bond::create([
             'account_id'=>$request->account_id,
             'value'=>$request->value,
-            'bond_type'=>$request->bond_type
+            'type'=>$request->type
         ]);
 
         $account = Account::find($request->account_id);
 
-        if ($Bonds->bond_type=='0') {
+        if ($Bonds->type==Bond::typeOfbond_pay) {
 
             $account->account_DOWN =$account->account_DOWN + $Bonds->value;
             $account->save();
 
         }
-        else if($Bonds->bond_type=='1'){
+        else if($Bonds->type==Bond::typeOfbond_rec){
 
             $account->account_UP =$account->account_UP + $Bonds->value;
             $account->save();
@@ -101,7 +103,7 @@ class BondsController extends RoutingController
     public function update(Request $request, string $id)
     {
         $validator=Validator::make ($request->all(),[
-            'account_id'=>'required'
+            //'account_id'=>'required'
 
         ]);
 
@@ -109,20 +111,44 @@ class BondsController extends RoutingController
             return $this->apiresponse(null,$validator->errors(),400);
         }
 
-        $Bonds = Bond::find($id);
+        $bond = Bond::where('id', $id)->first();
+
+        if ($bond) {
+
+            if ($bond->bondRel_id) {
+
+                $bondRel = BondRelation::where('id', $bond->bondRel_id)->first();
+
+                if ($bondRel) {
+
+                    $oldValue = $bond->value;
+                    $bond->value = $request->value;
+                    $bond->save();
+                    if($request->value > $bond->value)
+                    $bondRel->value -= ($request->value - $oldValue);
+                    else{$bondRel->value += ($request->value + $oldValue);}
+                    $bondRel->save();
+                }
+            } else {
+
+                $bond->value = $request->value;
+                $bond->account_id = $request->account_id;
+                $bond->note = $request->note;
+                $bond->save();
+            }
+        }
 
         if (!$id) {
             return $this->apiresponse(null,'This id Not found ',401);
         }
 
-        if ( !$Bonds) {
+        if ( !$bond) {
             return $this->apiresponse(null,'This Bonds Not found to updated ',401);
          }
 
-        $Bonds->update($request->all());
 
-        if ($Bonds) {
-            return $this->apiresponse($Bonds,'This Bonds is update ',201);
+        if ($bond) {
+            return $this->apiresponse($bond,'This Bonds is update ',201);
 
         }
 

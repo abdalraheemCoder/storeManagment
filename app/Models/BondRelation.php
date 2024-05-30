@@ -4,6 +4,8 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class BondRelation extends Model
 {
@@ -14,8 +16,21 @@ class BondRelation extends Model
     protected $fillable = [
     'value',
     'note',
-    'bond_id',
-    'salse_bill_id',
-    'buy_bill_id',
-    'customer_id'];
+    'bill_id',
+    'acc_id'];
+
+    public function bond():HasMany
+    {
+        return $this->hasMany(Bond::class);
+    }
+    public function account():BelongsTo
+    {
+        return $this->belongsTo(Account::class);
+    }
+    public function bill():BelongsTo
+    {
+        return $this->belongsTo(Bill::class);
+    }
+
+
 }

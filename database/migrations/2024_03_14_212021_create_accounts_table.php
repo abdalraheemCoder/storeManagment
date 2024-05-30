@@ -14,7 +14,6 @@ return new class extends Migration
         Schema::create('accounts', function (Blueprint $table) {
             $table->id();
             $table->string('account_name');
-            //$table->boolean('account_type');
             $table->double('account_UP')->default(0);
             $table->double('account_DOWN')->default(0);
             $table->timestamps();

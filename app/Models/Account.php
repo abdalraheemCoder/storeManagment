@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class Account extends Model
@@ -11,11 +12,19 @@ class Account extends Model
     use HasFactory;
     protected $table = 'accounts';
 
-    protected $fillable = ['id','account_name','account_type','account_UP','account_DOWN'];
+    protected $fillable = [
+    'id',
+    'account_name',
+    'account_UP',
+    'account_DOWN'];
 
-    public function bond():HasOne
+    public function bond():HasMany
     {
-        return $this->hasOne(bond::class,'account_id');
+        return $this->hasMany(bond::class,'account_id');
+    }
+    public function bondrelation():HasMany
+    {
+        return $this->hasMany(bondrelation::class,'acc_id');
     }
     public function customer():HasOne
     {

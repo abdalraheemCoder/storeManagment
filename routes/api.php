@@ -4,6 +4,7 @@ use App\Http\Controllers\api\AccountController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\api\AouthController;
+use App\Http\Controllers\api\BillController;
 use App\Http\Controllers\api\CustmerController;
 use App\Http\Controllers\api\BondsController;
 use App\Http\Controllers\api\CategoryController;
@@ -54,25 +55,23 @@ Route::resource('/account', AccountController::class);
 
 Route::resource('/bill_detail', billDetailController::class);
 
-Route::post('bond_relation/{id}', [BondRelationController::class, 'store']);
 
-Route::controller(Buy_BillController::class)->group(function () {
+Route::controller(BondRelationController::class)->group(function () {
 
-    Route::get('buy_bill', 'index');
-    Route::get('buy_bill/{id}', 'show');
-    Route::post('buy_bill', 'store');
-    Route::put('buy_bill/{id}', 'update');
-    Route::delete('buy_bill/{id}', 'destroy');
-
+    Route::get('bond_relation', 'index');
+    Route::get('bond_relation/{id}', 'show');
+    Route::post('bond_relation/{id}', 'store');
+    Route::put('bond_relation/{id}', 'update');
+    Route::delete('bond_relation/{id}', 'destroy');
 });
 
-Route::controller(Sales_BillController::class)->group(function () {
+Route::controller(BillController::class)->group(function () {
 
-    Route::get('sales_bill', 'index');
-    Route::get('sales_bill/{id}', 'show');
-    Route::post('sales_bill', 'store');
-    Route::put('sales_bill/{id}', 'update');
-    Route::delete('sales_bill/{id}', 'destroy');
+    Route::get('bill', 'index');
+    Route::get('bill/{id}', 'show');
+    Route::post('bill', 'store');
+    Route::put('bill/{id}', 'update');
+    Route::delete('bill/{id}', 'destroy');
 });
 
 //
@@ -80,12 +79,11 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
     return $request->user();
 });
 
-Route::get('/salesReportCustomer/{customer_id}', [reportController::class,'salesReportForClientStatement']);
+Route::get('/BillReportCustomer/{customer_id}', [reportController::class,'salesReportForClientStatement']);
 
-Route::get('/salesReportdriver/{driver_name}', [reportController::class,'salesReportForDrivertStatement']);
+Route::get('/BillReportdriver/{driver_name}', [reportController::class,'salesReportForDrivertStatement']);
 
-Route::get('/buyReportsupplier/{supplier_name}', [reportController::class,'BuyReportForsupplierStatement']);
+Route::get('/BillReportsupplier/{supplier_name}', [reportController::class,'BuyReportForsupplierStatement']);
 
-Route::get('/salseType/{type}', [reportController::class,'saleReportForTypeOfBill']);
+Route::get('/BillType/{type}', [reportController::class,'saleReportForTypeOfBill']);
 
-Route::get('/buyType/{type}', [reportController::class,'BuyReportForTypeOfBill']);

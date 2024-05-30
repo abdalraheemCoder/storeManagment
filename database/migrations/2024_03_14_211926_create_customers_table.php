@@ -16,7 +16,6 @@ return new class extends Migration
             $table->string('customer_name');
             $table->integer('customer_phone')->nullable();
             $table->string('customer_area')->nullable();
-            $table->string('customer_email')->unique()->nullable();
             //$table->foreignId('acc_client_id')->constrained('accounts');
             $table->longText('note')->nullable();
             $table->timestamps();
