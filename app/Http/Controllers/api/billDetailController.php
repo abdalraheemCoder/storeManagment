@@ -95,7 +95,7 @@ public function store(Request $request)
             'quantity' => $quantity,
             'totalPrice' => $totalPriceAfterDiscount,
             'discount' => $discount,
-            'discount %' => $discountPercentage,
+            'discount%' => $discountPercentage,
             'note' => $request->note,
             'material_id' => $materialId,
             'unit_id' => $unit->id,
@@ -125,7 +125,14 @@ public function store(Request $request)
         $billDetails = Bill_details::where('bill_id', $Bill->id)->get();
         $totalPrice = $billDetails->sum('totalPrice');
         $totalQuantity = $billDetails->sum('quantity');
-        $Bill->price = $totalPrice;
+
+        $Bill->discount = $Bill->discount ?? 0;
+        $Bill->{'discount%'} = $Bill->{'discount%'} ?? 0;
+
+        $totalPriceAfterBillDiscount = $totalPrice - $Bill->discount;
+        $totalPriceAfterBillDiscount -= $totalPriceAfterBillDiscount * ($Bill->{'discount%'} / 100);
+
+        $Bill->price = $totalPriceAfterBillDiscount;
         $Bill->quantity = $totalQuantity;
         $Bill->save();
 
@@ -133,7 +140,6 @@ public function store(Request $request)
 
         return $this->apiresponse($Bill, 'This bill_detail is successful', 200);
     });
-
 }
     public function update(Request $request, string $id)
     {
@@ -251,54 +257,128 @@ public function store(Request $request)
 
     private function updateAccounts($Bill, $oldPrice, $newPrice)
     {
+        $priceDifference = $newPrice - $oldPrice;
+
         if (($Bill->typeOfbill == Bill::typeOfbill_SALE && $Bill->typeOfpay == Bill::typeOfpay_CASH) ||
             ($Bill->typeOfbill == Bill::typeOfbill_RE_BUY && $Bill->typeOfpay == Bill::typeOfpay_CASH)) {
             $account = Account::find(1);
             if ($account) {
-                $account->account_UP += ($newPrice - $oldPrice);
+                $account->account_UP += $priceDifference;
                 $account->save();
             } else {
                 return $this->apiresponse(null, 'Account not found', 404);
             }
         }
 
-        if (($Bill->typeOfbill == Bill::typeOfbill_SALE && $Bill->typeOfpay == Bill::typeOfpay_DEF) ||
-            ($Bill->typeOfbill == Bill::typeOfbill_RE_BUY && $Bill->typeOfpay == Bill::typeOfpay_DEF)) {
+        if (($Bill->typeOfbill == Bill::typeOfbill_SALE && $Bill->typeOfpay == Bill::typeOfpay_DEF)) {
             $acc_customer = Customer::where('id', $Bill->customer_id)->select('acc_client_id')->first();
             if ($acc_customer) {
                 $account = Account::find($acc_customer->acc_client_id);
                 if ($account) {
-                    $account->account_UP += ($newPrice - $oldPrice);
+                    $account->account_UP += $priceDifference;
                     $account->save();
                 } else {
                     return $this->apiresponse(null, 'Account not found', 404);
                 }
             } else {
-                return $this->apiresponse(null, 'Account not found', 404);
+                return $this->apiresponse(null, 'Customer account not found', 404);
             }
         }
 
-        if (($Bill->typeOfbill == Bill::typeOfbill_BUY && $Bill->typeOfpay == Bill::typeOfpay_CASH) ||
-            ($Bill->typeOfbill == Bill::typeOfbill_RE_SALE && $Bill->typeOfpay == Bill::typeOfpay_CASH)) {
+        if (($Bill->typeOfbill == Bill::typeOfbill_BUY && $Bill->typeOfpay == Bill::typeOfpay_CASH)) {
             $account = Account::find(1);
             if ($account) {
-                $account->account_DOWN += ($newPrice - $oldPrice);
+                $account->account_DOWN += $priceDifference;
                 $account->save();
             } else {
                 return $this->apiresponse(null, 'Account not found', 404);
             }
         }
 
-        if (($Bill->typeOfbill == Bill::typeOfbill_BUY && $Bill->typeOfpay == Bill::typeOfpay_DEF) ||
-            ($Bill->typeOfbill == Bill::typeOfbill_RE_SALE && $Bill->typeOfpay == Bill::typeOfpay_DEF)) {
-                $acc_supplier = Supplier::where('id', $Bill->supplier_id)->select('acc_supplier_id')->first();
+        if (($Bill->typeOfbill == Bill::typeOfbill_BUY && $Bill->typeOfpay == Bill::typeOfpay_DEF)) {
+            $acc_supplier = Supplier::where('id', $Bill->supplier_id)->select('acc_supplier_id')->first();
             if ($acc_supplier) {
                 $account = Account::find($acc_supplier->acc_supplier_id);
                 if ($account) {
-                    $account->account_DOWN += ($newPrice - $oldPrice);
+                    $account->account_DOWN += $priceDifference;
                     $account->save();
                 } else {
                     return $this->apiresponse(null, 'Account not found', 404);
+                }
+            } else {
+                return $this->apiresponse(null, 'Supplier account not found', 404);
+            }
+        }
+
+        if (($Bill->typeOfbill == Bill::typeOfbill_RE_SALE && $Bill->typeOfpay == Bill::typeOfpay_CASH)) {
+            $account = Account::find(1);
+            if ($account) {
+                $account->account_DOWN += $priceDifference;
+                $account->save();
+            } else {
+                return $this->apiresponse(null, 'Account not found', 404);
+            }
+
+            if ($Bill->has('customer_id')) {
+                $acc_customer = Customer::where('id', $Bill->customer_id)->select('acc_client_id')->first();
+                if ($acc_customer) {
+                    $account = Account::find($acc_customer->acc_client_id);
+                    if ($account) {
+                        $account->account_DOWN += $priceDifference;
+                        $account->save();
+                    } else {
+                        return $this->apiresponse(null, 'Account not found', 404);
+                    }
+                } else {
+                    return $this->apiresponse(null, 'Customer account not found', 404);
+                }
+            }
+        }
+
+        if (($Bill->typeOfbill == Bill::typeOfbill_RE_SALE && $Bill->typeOfpay == Bill::typeOfpay_DEF)) {
+            $acc_customer = Customer::where('id', $Bill->customer_id)->select('acc_client_id')->first();
+            if ($acc_customer) {
+                $account = Account::find($acc_customer->acc_client_id);
+                if ($account) {
+                    $account->account_DOWN += $priceDifference;
+                    $account->save();
+                } else {
+                    return $this->apiresponse(null, 'Account not found', 404);
+                }
+            } else {
+                return $this->apiresponse(null, 'Customer account not found', 404);
+            }
+
+            $account = Account::find(1);
+            if ($account) {
+                $account->account_DOWN += $priceDifference;
+                $account->save();
+            } else {
+                return $this->apiresponse(null, 'Account not found', 404);
+            }
+        }
+
+        if (($Bill->typeOfbill == Bill::typeOfbill_RE_BUY && $Bill->typeOfpay == Bill::typeOfpay_CASH)) {
+            $account = Account::find(1);
+            if ($account) {
+                $account->account_UP += $priceDifference;
+                $account->save();
+            } else {
+                return $this->apiresponse(null, 'Account not found', 404);
+            }
+
+            if ($Bill->has('supplier_id')) {
+                $acc_supplier = Supplier::where('id', $Bill->supplier_id)->select('acc_supplier_id')->first();
+                if ($acc_supplier) {
+                    $account = Account::find($acc_supplier->acc_supplier_id);
+                    if ($account) {
+                        $account->account_UP += $priceDifference;
+                        $account->save();
+                    } else {
+                        return $this->apiresponse(null, 'Account not found', 404);
+                    }
+                } else {
+                    return $this->apiresponse(null, 'Supplier account not found', 404);
                 }
             }
         }
@@ -315,9 +395,10 @@ public function store(Request $request)
         } else {
             return $this->apiresponse(null, 'Account not found', 404);
         }
+
     }
     if (($Bill->typeOfbill == Bill::typeOfbill_SALE && $Bill->typeOfpay == Bill::typeOfpay_DEF)) {
-            $acc_customer = Customer::where('id', $Bill->customer_id)->select('acc_client_id')->first();
+        $acc_customer = Customer::where('id', $Bill->customer_id)->select('acc_client_id')->first();
         $sPriceDetail = Bill_details::where('bill_id', $Bill->id)->where('type', 'sale')->first();
         if ($acc_customer) {
             $account = Account::find($acc_customer->acc_client_id);
@@ -332,6 +413,32 @@ public function store(Request $request)
             return $this->apiresponse(null, 'Account not found', 404);
         }
     }
+
+    if (($Bill->typeOfbill == Bill::typeOfbill_BUY && $Bill->typeOfpay == Bill::typeOfpay_CASH)) {
+        $bPriceDetail = Bill_details::where('bill_id', $Bill->id)->where('type', 'buy')->first();
+        $account = Account::find(1);
+        if ($account) {
+            $totalPrice = $bPriceDetail->totalPrice;
+            $account->account_DOWN += $totalPrice;
+            $account->save();
+        } else {
+        return $this->apiresponse(null, 'Account not found', 404);
+    }
+}
+if (($Bill->typeOfbill == Bill::typeOfbill_BUY && $Bill->typeOfpay == Bill::typeOfpay_DEF)) {
+    $acc_supplier = Supplier::where('id', $Bill->supplier_id)->select('acc_supplier_id')->first();
+    $sPriceDetail = Bill_details::where('bill_id', $Bill->id)->where('type', 'buy')->first();
+    if ($acc_supplier) {
+        $account = Account::find($acc_supplier->acc_supplier_id);
+        if ($account) {
+            $totalPrice = $sPriceDetail->totalPrice;
+            $account->account_DOWN += $totalPrice;
+            $account->save();
+        } else {
+            return $this->apiresponse(null, 'Account not found', 404);
+        }
+    }
+}
     if (($Bill->typeOfbill == Bill::typeOfbill_RE_BUY && $Bill->typeOfpay == Bill::typeOfpay_CASH)) {
         $sPriceDetail = Bill_details::where('bill_id', $Bill->id)->where('type', 're_buy')->first();
         $account = Account::find(1);
@@ -342,6 +449,20 @@ public function store(Request $request)
             $account->save();
         } else {
             return $this->apiresponse(null, 'Account not found', 404);
+        }
+        if ($Bill->has('supplier_id')) {
+            $acc_supplier = supplier::where('id', $Bill->supplier_id)->select('acc_supplier_id')->first();
+            $sPriceDetail = Bill_details::where('bill_id', $Bill->id)->where('type', 're_buy')->first();
+            if ($acc_supplier) {
+                $account = Account::find($acc_supplier->acc_supplier_id);
+                if ($account) {
+                    $totalPrice = $sPriceDetail->totalPrice;
+                    $account->account_UP += $totalPrice;
+                    $account->save();
+                } else {
+                    return $this->apiresponse(null, 'Account not found', 404);
+                }
+            }
         }
     }
     if (($Bill->typeOfbill == Bill::typeOfbill_RE_BUY && $Bill->typeOfpay == Bill::typeOfpay_DEF)) {
@@ -356,6 +477,7 @@ public function store(Request $request)
             } else {
                 return $this->apiresponse(null, 'Account not found', 404);
             }
+
         }
         $sPriceDetail = Bill_details::where('bill_id', $Bill->id)->where('type', 're_buy')->first();
         $account = Account::find(1);
@@ -369,17 +491,6 @@ public function store(Request $request)
         }
     }
 
-    if (($Bill->typeOfbill == Bill::typeOfbill_BUY && $Bill->typeOfpay == Bill::typeOfpay_CASH)) {
-            $bPriceDetail = Bill_details::where('bill_id', $Bill->id)->where('type', 'buy')->first();
-            $account = Account::find(1);
-            if ($account) {
-                $totalPrice = $bPriceDetail->totalPrice;
-                $account->account_DOWN += $totalPrice;
-                $account->save();
-            } else {
-            return $this->apiresponse(null, 'Account not found', 404);
-        }
-    }
 
     if (($Bill->typeOfbill == Bill::typeOfbill_RE_SALE && $Bill->typeOfpay == Bill::typeOfpay_CASH)) {
         $bPriceDetail = Bill_details::where('bill_id', $Bill->id)->where('type', 're_sale')->first();
@@ -388,9 +499,22 @@ public function store(Request $request)
             $totalPrice = $bPriceDetail->totalPrice;
             $account->account_DOWN += $totalPrice;
             $account->save();
-            //return $this->apiresponse($totalPrice, 'Account not found', 404);
         } else {
             return $this->apiresponse(null, 'Account not found', 404);
+        }
+        if ($Bill->has('customer_id')) {
+            $acc_customer = Customer::where('id', $Bill->customer_id)->select('acc_client_id')->first();
+            $sPriceDetail = Bill_details::where('bill_id', $Bill->id)->where('type', 're_sale')->first();
+            if ($acc_customer) {
+                $account = Account::find($acc_customer->acc_client_id);
+                if ($account) {
+                    $totalPrice = $sPriceDetail->totalPrice;
+                    $account->account_DOWN += $totalPrice;
+                    $account->save();
+                } else {
+                    return $this->apiresponse(null, 'Account not found', 404);
+                }
+            }
         }
     }
     if ($Bill->typeOfbill == Bill::typeOfbill_RE_SALE && $Bill->typeOfpay == Bill::typeOfpay_DEF ) {
@@ -400,7 +524,7 @@ public function store(Request $request)
         $account = Account::find($acc_customer->acc_client_id);
         if ($account) {
             $totalPrice = $sPriceDetail->totalPrice;
-            $account->account_UP += $totalPrice;
+            $account->account_DOWN += $totalPrice;
             $account->save();
         } else {
             return $this->apiresponse(null, 'Account not found', 404);
@@ -418,20 +542,7 @@ public function store(Request $request)
         return $this->apiresponse(null, 'Account not found', 404);
     }
 }
-    if (($Bill->typeOfbill == Bill::typeOfbill_BUY && $Bill->typeOfpay == Bill::typeOfpay_DEF)) {
-        $acc_supplier = Supplier::where('id', $Bill->supplier_id)->select('acc_supplier_id')->first();
-        $sPriceDetail = Bill_details::where('bill_id', $Bill->id)->where('type', 'buy')->first();
-        if ($acc_supplier) {
-            $account = Account::find($acc_supplier->acc_supplier_id);
-            if ($account) {
-                $totalPrice = $sPriceDetail->totalPrice;
-                $account->account_DOWN += $totalPrice;
-                $account->save();
-            } else {
-                return $this->apiresponse(null, 'Account not found', 404);
-            }
-        }
-    }
+
 
 }
 
