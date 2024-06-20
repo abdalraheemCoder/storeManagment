@@ -37,23 +37,22 @@ class CategoryController extends RoutingController
     public function store(Request $request)
     {
 
-        $validator=Validator::make ($request->all(),[
-            'category_name'=>'required'
-
+        $validator = Validator::make($request->all(), [
+            'category_name' => 'required|string|max:255|unique:categories,category_name',
+            'note' => 'nullable|string',
         ]);
 
         if ($validator->fails()) {
-            return $this->apiresponse(null,$validator->errors(),400);
+            return $this->apiresponse(null, $validator->errors(), 400);
         }
 
-
-        $category = category::create($request->all());
+        $category = Category::create($request->all());
 
         if ($category) {
-            return $this->apiresponse($category,'This categoies is Save ',201);
-
+            return $this->apiresponse($category, 'This category is saved', 201);
         }
-        return $this->apiresponse(null,'This categories Not Save ',400);
+
+        return $this->apiresponse(null, 'This category is not saved', 400);
     }
 
     /**
@@ -92,34 +91,33 @@ class CategoryController extends RoutingController
      */
     public function update(Request $request, string $id)
     {
-        $validator=Validator::make ($request->all(),[
-            'type'=>'required'
+        $category = Category::find($id);
 
-
-        ]);
-        if ($validator->fails()) {
-            return $this->apiresponse(null,$validator->errors(),400);
+        if (!$category) {
+            return $this->apiresponse(null, 'This category not found to update', 404);
         }
 
-        $category = category::find($id);
-        if (!$id) {
-            return $this->apiresponse(null,'This id Not found ',401);
+        if ($request->filled('category_name')) {
+            $validator = Validator::make($request->all(), [
+                'category_name' => 'required|string|max:255|unique:categories,category_name,' . $id,
+                'note' => 'nullable|string',
+            ]);
+
+            if ($validator->fails()) {
+                return $this->apiresponse(null, $validator->errors(), 400);
+            }
+        } else {
+            $validator = Validator::make($request->all(), [
+                'note' => 'nullable|string',
+            ]);
+
+            if ($validator->fails()) {
+                return $this->apiresponse(null, $validator->errors(), 400);
+            }
         }
-
-        if ( !$category) {
-            return $this->apiresponse(null,'This category Not found to updated ',401);
-         }
-
         $category->update($request->all());
 
-        if ($category) {
-            return $this->apiresponse($category,'This category is update ',201);
-
-        }
-
-
-
-
+        return $this->apiresponse($category, 'This category is updated', 200);
 
     }
 

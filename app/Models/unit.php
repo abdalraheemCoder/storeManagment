@@ -20,7 +20,6 @@ class unit extends Model
         'Quantity',
         'Quan_return'];
 
-    protected $guarded = ['unit_ID'];
 
     public function materials(): BelongsTo
     {

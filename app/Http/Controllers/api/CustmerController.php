@@ -30,31 +30,41 @@ class CustmerController extends RoutingController
      */
     public function store(Request $request)
     {
-        $validator=Validator::make ($request->all(),[
-            'customer_name'=>'required',
-        ]);
-        $account =Account::Create([
-            'account_name' => $request->customer_name,
-            //'account_type' =>'0',
+        $validator = Validator::make($request->all(), [
+            'customer_name' => 'required|string|max:255|unique:customers',
+            'customer_phone' => 'nullable|integer|max:10',
+            'customer_area' => 'nullable|string',
+            'note' => 'nullable|string',
         ]);
 
         if ($validator->fails()) {
-            return $this->apiresponse(null,$validator->errors(),400);
+            return $this->apiresponse(null, $validator->errors(), 400);
         }
-        $customer = customer::create([
-            'customer_name'=>$request->customer_name,
-            'customer_area'=>$request->customer_area,
-            'acc_client_id'=>$account->id
+
+        $account = Account::create([
+            'account_name' => $request->customer_name,
+        ]);
+
+        if (!$account) {
+            return $this->apiresponse(null, 'Failed to create account', 400);
+        }
+
+        $customer = Customer::create([
+            'customer_name' => $request->customer_name,
+            'customer_phone' => $request->customer_phone,
+            'customer_area' => $request->customer_area,
+            'acc_client_id' => $account->id,
+            'note' => $request->note,
         ]);
 
         if ($customer) {
-            return $this->apiresponse($customer,'This customers is Save ',201);
+            return $this->apiresponse($customer, 'Customer saved successfully', 201);
+        } else {
+            $account->delete();
+            return $this->apiresponse(null, 'Failed to save customer', 400);
         }
 
-        if ($account) {
-            return $this->apiresponse($account,'This customers is Save ',201);
-        }
-        return $this->apiresponse(null,'This customers Not Save ',400);
+
     }
 
     /**
@@ -79,31 +89,40 @@ class CustmerController extends RoutingController
      */
     public function update(Request $request, string $id)
     {
-        $validator=Validator::make ($request->all(),[
-            'customer_name'=>'required',
-            //'customer_email'=>'unique'
+        $customer = Customer::find($id);
+
+        if (!$customer) {
+            return $this->apiresponse(null, 'Customer not found', 404);
+        }
+
+        $validator = Validator::make($request->all(), [
+            'customer_name' => 'sometimes|required|string|max:255|unique:customers,customer_name,' . $id,
+            'customer_phone' => 'sometimes|nullable|integer',
+            'customer_area' => 'sometimes|nullable|string',
+            'note' => 'sometimes|nullable|string',
         ]);
 
         if ($validator->fails()) {
-            return $this->apiresponse(null,$validator->errors(),400);
+            return $this->apiresponse(null, $validator->errors(), 400);
         }
 
-        $customer = customer::find($id);
-        if (!$id) {
-          return $this->apiresponse(null,'This id Not found  ',401);
+        if ($request->has('customer_name')) {
+            $customer->customer_name = $request->customer_name;
+            $account = Account::find($customer->acc_client_id);
+            if ($account) {
+                $account->account_name = $request->customer_name;
+                $account->save();
+            }
         }
+        $customer->fill($request->only([
+            'customer_phone',
+            'customer_area',
+            'note',
+        ]));
 
-        if ( !$customer) {
-            return $this->apiresponse(null,' This customer Not found to updated ',401);
-         }
+        $customer->save();
 
-
-         $customer->update($request->all());
-
-        if ($customer) {
-            return $this->apiresponse($customer,'This customer is Update',201);
-
-        }
+        return $this->apiresponse($customer, 'Customer updated successfully', 200);
 
     }
 

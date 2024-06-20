@@ -16,7 +16,6 @@ class category extends Model
     'category_name',
     'note'];
 
-    protected $guarded = ['category_ID'];
 
     public function materials(): HasMany
     {

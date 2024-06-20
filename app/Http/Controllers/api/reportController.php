@@ -3,82 +3,125 @@
 namespace App\Http\Controllers\api;
 
 use App\Http\Controllers\Controller;
-use App\Models\buyBill;
+use App\Models\Account;
+//use App\Models\Bill;
 use Illuminate\Http\Request;
 use App\Models\customer;
 use App\Models\driver;
-use App\Models\salseBill;
+use App\Models\Bill;
+use App\Models\Bill_details;
+use App\Models\material;
 use App\Models\supplier;
 use Illuminate\Routing\Controller as RoutingController;
+use SebastianBergmann\CodeCoverage\Driver\Driver as DriverDriver;
 
 class reportController extends RoutingController
 {
-    public function salesReportForClientStatement(string $customer_id)
+    public function getBillsByCustomer(Request $request, $customerId)
     {
+        $customer = Customer::find($customerId);
+        if (!$customer) {
+            return response()->json(['message' => 'Customer not found'], 404);
+        }
 
-        $customer = Customer::where('id', $customer_id)->first();
+        $bills = Bill::where('customer_id', $customerId)
+                     ->whereBetween('date', [$request->fromDate, $request->toDate])
+                     ->get();
 
-    if (!$customer) {
-        return response()->json(['message' => 'العميل غير موجود']);
+        return response()->json(['bills' => $bills], 200);
     }
 
-    $salesBills = SalseBill::where('customer_id', $customer->id)->get();
-
-    return response()->json(['sales_bills' => $salesBills]);
-    }
-
-    public function salesReportForDrivertStatement(string $driver_name)
+    public function getBillsByMaterial(Request $request, $materialId)
     {
+        $material = Material::find($materialId);
+        if (!$material) {
+            return response()->json(['message' => 'Material not found'], 404);
+        }
 
-        $driver = driver::where('driver_name', $driver_name)->first();
+        $billDetails = Bill_details::where('material_id', $materialId)
+                                   ->whereHas('bill', function ($query) use ($request) {
+                                       $query->whereBetween('date', [$request->fromDate, $request->toDate]);
+                                   })
+                                   ->get();
 
-    if (!$driver) {
-        return response()->json(['message' => 'العميل غير موجود']);
+        return response()->json(['billDetails' => $billDetails], 200);
     }
 
-
-    $salesBills = SalseBill::where('driver_id', $driver->id)->get();
-
-    return response()->json(['sales_bills' => $salesBills]);
-    }
-
-    public function BuyReportForsupplierStatement(string $supplier_name)
+    public function getBillsByDriver(Request $request, string $DriverId)
     {
+        $driver = Driver::find($DriverId);
+        if (!$driver) {
+            return response()->json(['message' => 'Driver not found'], 404);
+        }
 
-        $supplier = supplier::where('supplier_name', $supplier_name)->first();
+        $bills = Bill::where('driver_id', $DriverId)
+                     ->whereBetween('date', [$request->fromDate, $request->toDate])
+                     ->get();
 
-    if (!$supplier) {
-        return response()->json(['message' => 'العميل غير موجود']);
+        return response()->json(['bills' => $bills], 200);
     }
 
-
-    $buy_bills = buyBill::where('supplier_id', $supplier->id)->get();
-
-    return response()->json(['buy_bills' => $buy_bills]);
-    }
-
-
-    public function saleReportForTypeOfBill(bool $type)
+    public function getBillsBySupplier(Request $request, $supplierId)
     {
+        $supplier = Supplier::find($supplierId);
+        if (!$supplier) {
+            return response()->json(['message' => 'Supplier not found'], 404);
+        }
 
-    $salesBills = SalseBill::where('type', $type)->get();
+        $bills = Bill::where('supplier_id', $supplierId)
+                     ->whereBetween('date', [$request->fromDate, $request->toDate])
+                     ->get();
 
-    if ($salesBills->isEmpty()) {
-        return response()->json(['message' => 'لا توجد فواتير ']);
+        return response()->json(['bills' => $bills], 200);
     }
 
-    return response()->json(['salesBills' => $salesBills]);
-    }
-
-    public function BuyReportForTypeOfBill(bool $type)
+    public function getDeferredSalesBills(Request $request)
     {
+        $bills = Bill::where('typeOfbill', 'sale')
+                     ->where('typeOfpay', 'def')
+                     ->whereBetween('date', [$request->fromDate, $request->toDate])
+                     ->get();
 
-    $buyBills = buyBill::where('type', $type)->get();
-
-    if ($buyBills->isEmpty()) {
-        return response()->json(['message' => 'لا توجد فواتير ']);
+        return response()->json(['bills' => $bills], 200);
     }
 
-    return response()->json(['buyBills' => $buyBills]);
+    public function getDeferredBuyBills(Request $request)
+    {
+        $bills = Bill::where('typeOfbill', 'buy')
+                     ->where('typeOfpay', 'def')
+                     ->whereBetween('date', [$request->fromDate, $request->toDate])
+                     ->get();
+
+        return response()->json(['bills' => $bills], 200);
+    }
+
+    public function getCashSalesBills(Request $request)
+    {
+        $bills = Bill::where('typeOfbill', 'sale')
+                     ->where('typeOfpay', 'cash')
+                     ->whereBetween('date', [$request->fromDate, $request->toDate])
+                     ->get();
+
+        return response()->json(['bills' => $bills], 200);
+    }
+
+    public function getCashBuyBills(Request $request)
+    {
+        $bills = Bill::where('typeOfbill', 'buy')
+                     ->where('typeOfpay', 'cash')
+                     ->whereBetween('date', [$request->fromDate, $request->toDate])
+                     ->get();
+
+        return response()->json(['bills' => $bills], 200);
+    }
+
+    public function accountDetail($ID)
+    {
+        $account = Account::find($ID);
+        if ($account) {
+            return response()->json(['account' => $account], 200);
+        } else {
+            return response()->json(['message' => 'Account not found'], 404);
+        }
     }
 }

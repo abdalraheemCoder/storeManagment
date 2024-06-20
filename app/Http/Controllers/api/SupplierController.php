@@ -37,33 +37,40 @@ class SupplierController extends RoutingController
     public function store(Request $request)
     {
 
-        $validator=Validator::make ($request->all(),[
-            'supplier_name'=>'required',
-            //'supplier_email'=>'unique'
-        ]);
-        $account =Account::Create([
-            'account_name' => $request->supplier_name,
-            //'account_type' =>'1'
-        ]);
+    $validator = Validator::make($request->all(), [
+        'supplier_name' => 'required|string|max:255|unique:suppliers',
+        'supplier_phone' => 'nullable|integer',
+        'supplier_company' => 'nullable|string',
+        'note' => 'nullable|string',
+    ]);
 
+    if ($validator->fails()) {
+        return $this->apiresponse(null, $validator->errors(), 400);
+    }
 
-        if ($validator->fails()) {
-            return $this->apiresponse(null,$validator->errors(),400);
-        }
+    $account = Account::create([
+        'account_name' => $request->supplier_name,
+    ]);
 
-        //$supplier = supplier::create($request->all());
-        $supplier = supplier::create([
-            'supplier_name'=>$request->supplier_name,
-            'acc_supplier_id'=>$account->id
-        ]);
-        if ($supplier) {
-            return $this->apiresponse($supplier,'This suppliers is Save ',201);
-        }
+    if (!$account) {
+        return $this->apiresponse(null, 'Failed to create account', 400);
+    }
 
-        if ($account) {
-            return $this->apiresponse($account,'This customers is Save ',201);
-        }
-        return $this->apiresponse(null,'This suppliers Not Save ',400);
+    $supplier = Supplier::create([
+        'supplier_name' => $request->supplier_name,
+        'supplier_phone' => $request->supplier_phone,
+        'supplier_company' => $request->supplier_company,
+        'acc_supplier_id' => $account->id,
+        'note' => $request->note,
+    ]);
+
+    if ($supplier) {
+        return $this->apiresponse($supplier, 'Supplier saved successfully', 201);
+    } else {
+
+        $account->delete();
+        return $this->apiresponse(null, 'Failed to save supplier', 400);
+    }
     }
 
     /**
@@ -87,30 +94,42 @@ class SupplierController extends RoutingController
      */
     public function update(Request $request, string $id)
     {
-        $validator=Validator::make ($request->all(),[
-            'supplier_name'=>'required',
-            'supplier_email'=>'unique'
-        ]);
+        $supplier = Supplier::find($id);
 
-        if ($validator->fails()) {
-            return $this->apiresponse(null,$validator->errors(),400);
+    if (!$supplier) {
+        return $this->apiresponse(null, 'Supplier not found', 404);
+    }
+
+    $validator = Validator::make($request->all(), [
+        'supplier_name' => 'sometimes|required|string|max:255|unique:suppliers,supplier_name,' . $id,
+        'supplier_phone' => 'sometimes|nullable|integer',
+        'supplier_company' => 'sometimes|nullable|string',
+        'note' => 'sometimes|nullable|string',
+    ]);
+
+    if ($validator->fails()) {
+        return $this->apiresponse(null, $validator->errors(), 400);
+    }
+
+    if ($request->has('supplier_name')) {
+        $supplier->supplier_name = $request->supplier_name;
+
+        $account = Account::find($supplier->acc_supplier_id);
+        if ($account) {
+            $account->account_name = $request->supplier_name;
+            $account->save();
         }
+    }
 
-        $supplier = supplier::find($id);
-        if (!$id) {
-            return $this->apiresponse(null,'This id Not found ',401);
-        }
+    $supplier->fill($request->only([
+        'supplier_phone',
+        'supplier_company',
+        'note',
+    ]));
 
-        if (!$supplier) {
-            return $this->apiresponse(null,'This supplier Not found to updated ',401);
-         }
+    $supplier->save();
 
-        $supplier->update($request->all());
-
-        if ($supplier) {
-            return $this->apiresponse($supplier,'This supplier is update ',201);
-
-        }
+    return $this->apiresponse($supplier, 'Supplier updated successfully', 200);
 
     }
 

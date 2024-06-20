@@ -30,8 +30,6 @@ class AccountController extends Controller
     {
         $validator=Validator::make($request->all(),[
             'account_name'=>'required',
-            //'account_type'=>'required'
-
         ]);
 
         if ($validator->fails()) {

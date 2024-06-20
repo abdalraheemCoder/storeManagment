@@ -11,8 +11,8 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('bonds', function (Blueprint $table) {
-            $table->foreignId('bondRel_id')->nullable()->constrained('bond_relations');
+        Schema::table('bills', function (Blueprint $table) {
+            $table->double('discount%')->nullable();
         });
     }
 
@@ -21,7 +21,7 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('bonds', function (Blueprint $table) {
+        Schema::table('bills', function (Blueprint $table) {
             //
         });
     }

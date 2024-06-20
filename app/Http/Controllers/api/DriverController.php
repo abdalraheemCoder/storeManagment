@@ -37,23 +37,24 @@ class DriverController extends RoutingController
      */
     public function store(Request $request)
     {
-
-        $validator=Validator::make ($request->all(),[
-            'driver_name'=>'required'
-
+        $validator = Validator::make($request->all(), [
+            'driver_name' => 'required|string|max:255|unique:drivers,driver_name',
+            'driver_phone' => 'nullable|integer',
+            'driver_address' => 'nullable|string|max:255',
+            'note' => 'nullable|string'
         ]);
 
         if ($validator->fails()) {
-            return $this->apiresponse(null,$validator->errors(),400);
+            return $this->apiresponse(null, $validator->errors(), 400);
         }
-        $driver = driver::create($request->all());
-        //$token = $driver->createToken('DriverApp')->accessToken;
+
+        $driver = Driver::create($request->all());
+
         if ($driver) {
-
-            return  $this->apiresponse($driver,'This Bonds is Save ',201);
-
+            return $this->apiresponse($driver, 'This Driver is saved', 201);
         }
-        return $this->apiresponse(null,'This Bonds Not Save ',400);
+
+        return $this->apiresponse(null, 'This Driver is not saved', 400);
 
     }
 
@@ -89,31 +90,32 @@ class DriverController extends RoutingController
      */
     public function update(Request $request, string $id)
     {
-        $validator=Validator::make ($request->all(),[
-            'driver_name'=>'required'
+        $driver = Driver::find($id);
 
+          if (!$driver) {
+              return $this->apiresponse(null, 'Driver not found', 404);
+          }
 
-        ]);
-        if ($validator->fails()) {
-            return $this->apiresponse(null,$validator->errors(),400);
-        }
+          $validator = Validator::make($request->all(), [
+              'driver_name' => 'sometimes|required|string|max:255|unique:drivers,driver_name,' . $driver->id,
+              'driver_phone' => 'sometimes|nullable|integer',
+              'driver_address' => 'sometimes|nullable|string|max:255',
+              'note' => 'sometimes|nullable|string'
+          ]);
 
-        $driver = driver::find($id);
-        if (!$id) {
-            return $this->apiresponse(null,'This id Not found ',401);
-        }
+          if ($validator->fails()) {
+              return $this->apiresponse(null, $validator->errors(), 400);
+          }
 
-        if ( !$driver) {
-            return $this->apiresponse(null,'This driver Not found to updated ',401);
-         }
+          $driver->update($request->only([
+              'driver_name',
+              'driver_phone',
+              'driver_address',
+              'note'
+          ]));
 
-        $driver->update($request->all());
-
-        if ($driver) {
-            return $this->apiresponse($driver,'This driver is update ',201);
-
-        }
-    }
+          return $this->apiresponse($driver, 'This Driver is updated', 200);
+     }
 
     /**
      * Remove the specified resource from storage.

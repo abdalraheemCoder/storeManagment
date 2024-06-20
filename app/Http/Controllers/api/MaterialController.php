@@ -36,23 +36,26 @@ class MaterialController extends RoutingController
     public function store(Request $request)
     {
 
-        $validator=Validator::make ($request->all(),[
-            'material_name'=>'required'
-
-
+        $validator = Validator::make($request->all(), [
+            'material_name' => 'required|string|max:255|unique:materials,material_name,' ,
+            'discount_mat' => 'nullable|numeric|min:0|max:100',
+            'note' => 'nullable|string',
+            'expierd_date' => 'nullable|date|after_or_equal:today',
+            'category_id' => 'required|exists:categories,id',
         ]);
 
         if ($validator->fails()) {
-            return $this->apiresponse(null,$validator->errors(),400);
+            return $this->apiresponse(null, $validator->errors(), 400);
         }
 
-       
-        $material = material::create($request->all());
+        $material = Material::create($request->all());
 
         if ($material) {
-            return $this->apiresponse($material,'This material is Save ',201);
+            return $this->apiresponse($material, 'This material is saved', 201);
         }
-        return $this->apiresponse(null,'This material Not Save ',400);
+
+        return $this->apiresponse(null, 'This material is not saved', 400);
+
     }
 
     /**
@@ -87,30 +90,36 @@ class MaterialController extends RoutingController
      */
     public function update(Request $request, string $id)
     {
-      $validator=Validator::make ($request->all(),[
-            'material_name'=>'required'
+        $material = Material::find($id);
 
+        if (!$material) {
+            return $this->apiresponse(null, 'This material not found to update', 404);
+        }
+
+        $validator = Validator::make($request->all(), [
+            'material_name' => 'sometimes|required|string|max:255|unique:materials,material_name,' . $id,
+            'discount_mat' => 'sometimes|nullable|numeric|min:0|max:100',
+            'note' => 'sometimes|nullable|string',
+            'expierd_date' => 'sometimes|nullable|date|after_or_equal:today',
+            'category_id' => 'sometimes|required|exists:categories,id',
         ]);
 
         if ($validator->fails()) {
-            return $this->apiresponse(null,$validator->errors(),400);
+            return $this->apiresponse(null, $validator->errors(), 400);
         }
 
-       $material = material::find($id);
-          if (!$id) {
-            return $this->apiresponse(null,'This id Not found ',401);
-        }
+        $material->fill($request->only([
+            'material_name',
+            'discount_mat',
+            'note',
+            'expierd_date',
+            'category_id',
+        ]));
 
-          if (!$material) {
-            return $this->apiresponse(null,'This material Not found to updated ',401);
-         }
+        $material->save();
 
-        $material->update($request->all());
-
-        if ($material) {
-            return $this->apiresponse($material,'This material is update ',201);
-
-        }
+        return $this->apiresponse($material, 'This material is updated', 200);
+    
     }
 
     /**

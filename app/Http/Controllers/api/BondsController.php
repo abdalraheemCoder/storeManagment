@@ -33,43 +33,44 @@ class BondsController extends RoutingController
      */
     public function store(Request $request)
     {
-
-        $validator=Validator::make($request->all(),[
-            'account_id'=>'required'
-
+        $validator = Validator::make($request->all(), [
+            'account_id' => 'required|exists:accounts,id',
+            'value' => 'required|numeric',
+            'type' => 'required|in:receipt,payment',
+            'note' => 'nullable|string',
         ]);
 
         if ($validator->fails()) {
-            return $this->apiresponse(null,$validator->errors(),400);
+            return $this->apiresponse(null, $validator->errors(), 400);
         }
 
-
-        //$Bonds = Bond::create($request->all());
         $Bonds = Bond::create([
-            'account_id'=>$request->account_id,
-            'value'=>$request->value,
-            'type'=>$request->type
+            'account_id' => $request->account_id,
+            'value' => $request->value,
+            'type' => $request->type,
+            'note' => $request->note,
         ]);
 
         $account = Account::find($request->account_id);
-
-        if ($Bonds->type==Bond::typeOfbond_pay) {
-
-            $account->account_DOWN =$account->account_DOWN + $Bonds->value;
-            $account->save();
-
+        if ($Bonds->type == 'payment') {
+            $account->account_UP += $Bonds->value;
+        } elseif ($Bonds->type == 'receipt') {
+            $account->account_DOWN += $Bonds->value;
         }
-        else if($Bonds->type==Bond::typeOfbond_rec){
-
-            $account->account_UP =$account->account_UP + $Bonds->value;
-            $account->save();
+        $account->save();
+        $account = Account::find(1);
+        if ($Bonds->type == 'payment') {
+            $account->account_DOWN += $Bonds->value;
+        } elseif ($Bonds->type == 'receipt') {
+            $account->account_UP += $Bonds->value;
         }
+        $account->save();
 
         if ($Bonds) {
-            return $this->apiresponse($Bonds,'This Bonds is Save ',201);
-
+            return $this->apiresponse($Bonds, 'This Bonds is Save', 201);
         }
-        return $this->apiresponse(null,'This Bonds Not Save ',400);
+        return $this->apiresponse(null, 'This Bonds Not Save', 400);
+
     }
 
 
@@ -103,7 +104,6 @@ class BondsController extends RoutingController
     public function update(Request $request, string $id)
     {
         $validator=Validator::make ($request->all(),[
-            //'account_id'=>'required'
 
         ]);
 
@@ -112,32 +112,84 @@ class BondsController extends RoutingController
         }
 
         $bond = Bond::where('id', $id)->first();
+        $bondRelation = BondRelation::find($bond->bondRel_id);
+        if ($bondRelation) {
+            $bill = Bill::find($bondRelation->bill_id);
+            if ($bill) {
 
-        if ($bond) {
+                $totalBondValue = Bond::where('bondRel_id', $bondRelation->id)
+                                      ->where('id', '!=', $bond->id)
+                                      ->sum('value');
 
-            if ($bond->bondRel_id) {
+                $newTotalBondValue = $totalBondValue + $request->value;
 
-                $bondRel = BondRelation::where('id', $bond->bondRel_id)->first();
-
-                if ($bondRel) {
-
-                    $oldValue = $bond->value;
-                    $bond->value = $request->value;
-                    $bond->save();
-                    if($request->value > $bond->value)
-                    $bondRel->value -= ($request->value - $oldValue);
-                    else{$bondRel->value += ($request->value + $oldValue);}
-                    $bondRel->save();
+                if ($newTotalBondValue > $bill->price) {
+                    return $this->apiresponse(null, 'The total bond value exceeds the bill price', 400);
                 }
-            } else {
-
-                $bond->value = $request->value;
-                $bond->account_id = $request->account_id;
-                $bond->note = $request->note;
-                $bond->save();
+                else{
+                    $bondRelation->value = $newTotalBondValue;
+                    $bondRelation->save();
+                }
             }
         }
+    if ($bond) {
+        $account = Account::find($bond->account_id);
 
+        if ($account) {
+            if ($bond->type == Bond::typeOfbond_pay) {
+                $account->account_UP -= $bond->value;
+            } elseif ($bond->type == Bond::typeOfbond_rec) {
+                $account->account_DOWN -= $bond->value;
+            }
+
+            $account->save();
+        }
+        $account = Account::find(1);
+        if ($account) {
+            if ($bond->type == Bond::typeOfbond_pay) {
+                $account->account_DOWN -= $bond->value;
+            } elseif ($bond->type == Bond::typeOfbond_rec) {
+                $account->account_UP -= $bond->value;
+            }
+
+            $account->save();
+        }
+
+
+        $bond->value = $request->value;
+        $bond->save();
+
+        $account = Account::find($bond->account_id);
+        if ($account) {
+            if ($bond->type == Bond::typeOfbond_pay) {
+                $account->account_UP += $bond->value;
+            } elseif ($bond->type == Bond::typeOfbond_rec) {
+                $account->account_DOWN += $bond->value;
+            }
+
+            $account->save();
+        }
+
+
+        $account = Account::find(1);
+        if ($account) {
+            if ($bond->type == Bond::typeOfbond_pay) {
+                $account->account_DOWN += $bond->value;
+            } elseif ($bond->type == Bond::typeOfbond_rec) {
+                $account->account_UP += $bond->value;
+            }
+
+            $account->save();
+        }
+            if ($bondRelation) {
+
+                return $this->apiresponse(null, 'Bond and related bond relation updated successfully', 200);
+            } else {
+                return $this->apiresponse(null, 'Bond relation not found for this bond', 404);
+            }
+        } else {
+            return $this->apiresponse(null, 'Bond not found', 404);
+        }
         if (!$id) {
             return $this->apiresponse(null,'This id Not found ',401);
         }
@@ -153,17 +205,9 @@ class BondsController extends RoutingController
         }
 
     }
-
-
-
     /**
      * Remove the specified resource from storage.
      */
-
-
-
-
-
 
     public function destroy(string $id)
     {

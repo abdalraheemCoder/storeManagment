@@ -19,11 +19,14 @@ class Bill extends Model
 
     const typeOfbill_BUY = "buy" ;
     const typeOfbill_SALE = "sale";
+    const typeOfbill_RE_SALE = "re_sale" ;
+    const typeOfbill_RE_BUY = "re_buy";
     const typeOfpay_DEF = "def" ;
     const typeOfpay_CASH = "cash";
 
     protected $fillable = [
     'price',
+    'discount%',
     'quantity',
     'date',
     'discount',

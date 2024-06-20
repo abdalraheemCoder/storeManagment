@@ -15,12 +15,14 @@ return new class extends Migration
             $table->id();
             $table->integer('price')->default(0);
             $table->integer('quantity')->default(1);
-            $table->integer('discount')->default(0);
-            $table->longText('note');
+            $table->double('discount')->default(0);
+            // $table->double('discount % ')->default(0);
+            // $table->double('totalPrice')->default(0);
+            $table->longText('note')->nullable();
             $table->foreignId('unit_id')->constrained('units');
             $table->foreignId('material_id')->constrained('materials');
             $table->foreignId('bill_id')->constrained('bills');
-            $table->enum('type', ['buy', 'sale']);
+            $table->enum('type', ['buy', 'sale','re_sale','re_buy']);
             $table->timestamps();
         });
     }

@@ -79,11 +79,13 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
     return $request->user();
 });
 
-Route::get('/BillReportCustomer/{customer_id}', [reportController::class,'salesReportForClientStatement']);
-
-Route::get('/BillReportdriver/{driver_name}', [reportController::class,'salesReportForDrivertStatement']);
-
-Route::get('/BillReportsupplier/{supplier_name}', [reportController::class,'BuyReportForsupplierStatement']);
-
-Route::get('/BillType/{type}', [reportController::class,'saleReportForTypeOfBill']);
+Route::get('bills/customer/{customerId}', [reportController::class, 'getBillsByCustomer']);
+Route::get('bills/material/{materialId}', [reportController::class, 'getBillsByMaterial']);
+Route::get('bills/supplier/{supplierId}', [reportController::class, 'getBillsBySupplier']);
+Route::get('bills/driver/{driverId}', [reportController::class, 'getBillsByDriver']);
+Route::get('GetDeferredSalesBills', [reportController::class, 'getDeferredSalesBills']);
+Route::get('GetDeferredBuyBills', [reportController::class, 'getDeferredBuyBills']);
+Route::get('GetCashSalesBills', [reportController::class, 'getCashSalesBills']);
+Route::get('GetCashBuyBills', [reportController::class, 'getCashBuyBills']);
+Route::get('accountDetail/{ID}', [reportController::class, 'accountDetail']);
 

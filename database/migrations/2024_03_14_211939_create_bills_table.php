@@ -17,17 +17,18 @@ return new class extends Migration
     {
         Schema::create('bills', function (Blueprint $table) {
             $table->id();
-            $table->double('price');
-            $table->double('quantity');
+            $table->double('price')->nullable();
+            $table->double('quantity')->nullable();
             $table->date('date')->default(now());
             $table->double('discount')->nullable();
-            $table->enum('typeOfbill',['buy' , 'sale']);
+            $table->enum('typeOfbill',['buy' , 'sale','re_sale','re_buy']);
             $table->enum('typeOfpay',['def' , 'cash']);
             $table->longText('note')->nullable();
+            // $table->double('discount % ')->nullable();
             $table->foreignId('customer_id')->nullable()->constrained('customers');
             $table->foreignId('driver_id')->nullable()->constrained('drivers');
+            //$table->foreignId('supplier_id')->nullable()->constrained('suppliers');
             $table->timestamps();
-
         });
     }
 

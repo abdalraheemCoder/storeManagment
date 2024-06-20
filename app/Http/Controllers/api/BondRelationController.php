@@ -40,125 +40,121 @@ class BondRelationController extends RoutingController
      */
     public function store(Request $request, string $id)
     {
-
-        $validator=Validator::make($request->all(),[
-            'value'=>'required'
-
+        $validator = Validator::make($request->all(), [
+            'value' => 'required|numeric'
         ]);
 
         if ($validator->fails()) {
-            return $this->apiresponse(null,$validator->errors(),400);
+            return $this->apiresponse(null, $validator->errors(), 400);
         }
-        if (Bill::typeOfbill_SALE) {
-            $bill = Bill::find($id);
-            if ($bill) {
-                $customerId = Bill::where('id', $id)->select('customer_id')->first()->customer_id;
-                if ($customerId) {
-                    $customerAccountId = customer::where('id', $customerId)->select('acc_client_id')->first();
-                }
 
-                if (isset($customerAccountId)) {
-                    $BondRelation = BondRelation::firstOrNew(
-                        ['bill_id' => $bill->id, 'acc_id' => $customerAccountId->acc_client_id],
-                        ['value' => 0]
-                    );
+        $bill = Bill::find($id);
+        if (!$bill) {
+            return $this->apiresponse(null, 'Bill not found', 404);
+        }
 
-                    $newBondRelationValue = $BondRelation->value + $request->value;
-                    $totalBondValues = BondRelation::where('bill_id', $bill->id)->sum('value') + $request->value;
+        $account = null;
 
-                    if ($newBondRelationValue > $bill->price || $totalBondValues > $bill->price) {
-                        return $this->apiresponse(null, 'This BondRel Not Save', 400);
-                    }
-
-                    $BondRelation->value = $newBondRelationValue;
-                    $BondRelation->save();
-
-                    $bonds = new Bond([
-                        'account_id' => $customerAccountId->acc_client_id,
-                        'value' => $request->value,
-                        'type' => 'receipt',
-                        'bondRel_id' => $BondRelation->id
-                    ]);
-                    $bonds->save();
-                    $account = Account::find($bonds->account_id);
-                        if ($account) {
-
-                            $account->account_DOWN = $account->account_DOWN + $bonds->value;
-                            $account->save();
-
-                            return $this->apiresponse($account, 'Account updated successfully', 200);
-                        } else {
-
-                            return $this->apiresponse(null, 'Account not found', 404);
-                        }
-                        if ($BondRelation) {
-                            return $this->apiresponse($BondRelation,'This Bonds is Save ',201);
-
-                        }
-                        return $this->apiresponse(null,'This Bonds Not Save ',400);
-                }
+        if ($bill->typeOfbill == Bill::typeOfbill_SALE) {
+            $customerAccountId = $this->getCustomerAccountId($bill->id);
+            if ($customerAccountId) {
+                $account = $this->handleBondRelation($bill, $customerAccountId, $request->value, 'receipt');
+            }
+        } elseif ($bill->typeOfbill == Bill::typeOfbill_BUY) {
+            $supplierAccountId = $this->getSupplierAccountId($bill->id);
+            if ($supplierAccountId) {
+                $account = $this->handleBondRelation($bill, $supplierAccountId, $request->value, 'payment');
             }
         }
 
-        if (Bill::typeOfbill_BUY) {
-            $bill = Bill::find($id);
-            if ($bill) {
-                $supplierID = Bill::where('id', $id)->select('supplier_id')->first()->supplier_id;
-                if ($supplierID) {
-                    $supplierAccountId = supplier::where('id', $supplierID)->select('acc_supplier_id')->first();
-                }
-
-                if (isset($supplierAccountId)) {
-                    $BondRelation = BondRelation::firstOrNew(
-                        ['bill_id' => $bill->id, 'acc_id' => $supplierAccountId->acc_supplier_id],
-                        ['value' => 0]
-                    );
-
-                    $newBondRelationValue = $BondRelation->value + $request->value;
-                    $totalBondValues = BondRelation::where('bill_id', $bill->id)->sum('value') + $request->value;
-
-                    if ($newBondRelationValue > $bill->price || $totalBondValues > $bill->price) {
-                        return $this->apiresponse(null, 'This BondRel Not Save', 400);
-                    }
-
-                    $BondRelation->value = $newBondRelationValue;
-                    $BondRelation->save();
-
-                    $bonds = new Bond([
-                        'account_id' => $supplierAccountId->acc_supplier_id,
-                        'value' => $request->value,
-                        'type' => 'payment',
-                        'bondRel_id' => $BondRelation->id
-                    ]);
-                    $bonds->save();
-                    $account = Account::find($bonds->account_id);
-                    if ($account) {
-
-                        $account->account_UP = $account->account_UP + $bonds->value;
-                        $account->save();
-
-                        return $this->apiresponse($account, 'Account updated successfully', 200);
-                    } else {
-
-                        return $this->apiresponse(null, 'Account not found', 404);
-                    }
-                    if ($BondRelation) {
-                        return $this->apiresponse($BondRelation,'This Bonds is Save ',201);
-
-                    }
-                    return $this->apiresponse(null,'This Bonds Not Save ',400);
-                }
-            }
+        if ($account) {
+            $this->updateAccount($account, $bill, $request->value);
+            $this->updateMainAccount($bill, $request->value);
         }
 
+        return $this->apiresponse(null, 'Bond and accounts updated successfully', 200);
+    }
+
+    private function getCustomerAccountId($billId)
+    {
+        $customerId = Bill::where('id', $billId)->value('customer_id');
+        if ($customerId) {
+            return Customer::where('id', $customerId)->value('acc_client_id');
+        }
+        return null;
+    }
+
+    private function getSupplierAccountId($billId)
+    {
+        $supplierId = Bill::where('id', $billId)->value('supplier_id');
+        if ($supplierId) {
+            return Supplier::where('id', $supplierId)->value('acc_supplier_id');
+        }
+        return null;
+    }
+
+    private function handleBondRelation($bill, $accountId, $value, $type)
+    {
+        $bondRelation = BondRelation::firstOrNew(
+            ['bill_id' => $bill->id, 'acc_id' => $accountId],
+            ['value' => 0]
+        );
+
+        $newBondRelationValue = $bondRelation->value + $value;
+        $totalBondValues = BondRelation::where('bill_id', $bill->id)->sum('value') + $value;
+
+        if ($newBondRelationValue > $bill->price || $totalBondValues > $bill->price) {
+            throw new \Exception('This BondRel Not Save');
+        }
+
+        $bondRelation->value = $newBondRelationValue;
+        $bondRelation->save();
+
+        $bonds = new Bond([
+            'account_id' => $accountId,
+            'value' => $value,
+            'type' => $type,
+            'bondRel_id' => $bondRelation->id
+        ]);
+        $bonds->save();
+
+        return Account::find($accountId);
+    }
+
+    private function updateAccount($account, $bill, $value)
+    {
+        if ($bill->typeOfbill == Bill::typeOfbill_SALE) {
+            if ($account->account_DOWN <= $account->account_UP) {
+                $account->account_DOWN += $value;
+            }
+        } elseif ($bill->typeOfbill == Bill::typeOfbill_BUY) {
+            if ($account->account_UP <= $account->account_DOWN) {
+                $account->account_UP += $value;
+            }
+        }
+        $account->save();
+    }
+
+    private function updateMainAccount($bill, $value)
+    {
+        $mainAccount = Account::find(1);
+        if ($mainAccount) {
+            if ($bill->typeOfbill == Bill::typeOfbill_SALE) {
+                if ($mainAccount->account_UP <= $mainAccount->account_DOWN) {
+                    $mainAccount->account_UP += $value;
+                }
+            } elseif ($bill->typeOfbill == Bill::typeOfbill_BUY) {
+                if ($mainAccount->account_DOWN <= $mainAccount->account_UP) {
+                    $mainAccount->account_DOWN += $value;
+                }
+            }
+            $mainAccount->save();
+        }
     }
 
     /**
      * Display the specified resource.
      */
-
-
-
     public function show(string $id)
     {
 
