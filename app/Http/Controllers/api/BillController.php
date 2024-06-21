@@ -179,13 +179,45 @@ class BillController extends RoutingController
       }
 
       if ($request->has('customer_id')) {
-          $customer = Customer::find($request->customer_id);
-          if ($customer) {
-              $Bill->customer_id = $request->customer_id;
-          } else {
-              return $this->apiresponse(null, 'Customer not found', 401);
-          }
-      }
+        $oldCustomer = Customer::find($Bill->customer_id);
+        if (!$oldCustomer) {
+            return $this->apiresponse(null, 'Old customer not found', 404);
+        }
+
+        $newCustomer = Customer::find($request->customer_id);
+        if (!$newCustomer) {
+            return $this->apiresponse(null, 'New customer not found', 404);
+        }
+
+        $accOldCustomer = Customer::where('id', $oldCustomer->id)->select('acc_client_id')->first();
+        if (!$accOldCustomer) {
+            return $this->apiresponse(null, 'Account for old customer not found', 404);
+        }
+
+        $accNewCustomer = Customer::where('id', $newCustomer->id)->select('acc_client_id')->first();
+        if (!$accNewCustomer) {
+            return $this->apiresponse(null, 'Account for new customer not found', 404);
+        }
+
+        $Bill->customer_id = $request->customer_id;
+        $Bill->save();
+
+        $accountOldCustomer = Account::find($accOldCustomer->acc_client_id);
+        if ($accountOldCustomer) {
+            $accountOldCustomer->account_UP -= $Bill->price;
+            $accountOldCustomer->save();
+        } else {
+            return $this->apiresponse(null, 'Account for old customer not found', 404);
+        }
+
+        $accountNewCustomer = Account::find($accNewCustomer->acc_client_id);
+        if ($accountNewCustomer) {
+            $accountNewCustomer->account_UP += $Bill->price;
+            $accountNewCustomer->save();
+        } else {
+            return $this->apiresponse(null, 'Account for new customer not found', 404);
+        }
+    }
 
       if ($request->has('supplier_id')) {
           $supplier = Supplier::find($request->supplier_id);
@@ -196,21 +228,52 @@ class BillController extends RoutingController
           }
       }
 
-      if ($request->has('driver_id')) {
-          $driver = Driver::find($request->driver_id);
-          if ($driver) {
-              $Bill->driver_id = $request->driver_id;
-          } else {
-              return $this->apiresponse(null, 'Driver not found', 401);
-          }
-      }
+      if ($request->has('supplier_id')) {
+        $oldSupplier = Supplier::find($Bill->supplier_id);
+        if (!$oldSupplier) {
+            return $this->apiresponse(null, 'Old supplier not found', 404);
+        }
+
+        $newSupplier = Supplier::find($request->supplier_id);
+        if (!$newSupplier) {
+            return $this->apiresponse(null, 'New supplier not found', 404);
+        }
+
+        $accOldSupplier = Supplier::where('id', $oldSupplier->id)->select('acc_supplier_id')->first();
+        if (!$accOldSupplier) {
+            return $this->apiresponse(null, 'Account for old supplier not found', 404);
+        }
+
+        $accNewSupplier = Supplier::where('id', $newSupplier->id)->select('acc_supplier_id')->first();
+        if (!$accNewSupplier) {
+            return $this->apiresponse(null, 'Account for new supplier not found', 404);
+        }
+
+        $Bill->supplier_id = $request->supplier_id;
+        $Bill->save();
+
+        $accountOldSupplier = Account::find($accOldSupplier->acc_supplier_id);
+        if ($accountOldSupplier) {
+            $accountOldSupplier->account_DOWN -= $Bill->price;
+            $accountOldSupplier->save();
+        } else {
+            return $this->apiresponse(null, 'Account for old supplier not found', 404);
+        }
+
+        $accountNewSupplier = Account::find($accNewSupplier->acc_supplier_id);
+        if ($accountNewSupplier) {
+            $accountNewSupplier->account_DOWN += $Bill->price;
+            $accountNewSupplier->save();
+        } else {
+            return $this->apiresponse(null, 'Account for new supplier not found', 404);
+        }
+    }
 
       $Bill->save();
 
+
       return $this->apiresponse($Bill, 'This Bill is updated', 200);
     }
-
-
 
 
     public function destroy(string $id)

@@ -148,7 +148,7 @@ public function store(Request $request)
             'totalPrice' => 'nullable|integer|min:0',
             'quantity' => 'nullable|integer|min:1|required_with:material_id',
             'discount' => 'nullable|numeric|min:0',
-            'discount %' => 'nullable|numeric|min:0',
+            'discount%' => 'nullable|numeric|min:0',
             'note' => 'nullable|string',
             'unit_id' => 'nullable|exists:units,id|required_with:material_id',
             'material_id' => 'nullable|exists:materials,id',
@@ -167,7 +167,7 @@ public function store(Request $request)
             $unitId = $request->unit_id ?? $oldunitId;
             $materialId = $request->material_id ?? $oldmaterialId;
 
-            $oldPrice = $bill_detail->price;
+            $oldPrice = $bill_detail->totalPrice;
             $oldQuantity = $bill_detail->quantity;
 
             $Ounit = Unit::where('unit_mat_id', $oldmaterialId)->where('id', $oldunitId)->first();
@@ -187,13 +187,13 @@ public function store(Request $request)
                         if ($Ounit->unit_equal > $old->unit_equal) {
                             $old->Quantity += $oldQuantity * ($Ounit->unit_equal / $old->unit_equal);
                         } else {
-                            $old->Quantity += $oldQuantity / ($old->unit_equal / $Ounit->unit_equal);
+                            $old->Quantity += intval($oldQuantity / ($old->unit_equal / $Ounit->unit_equal));
                         }
                     } elseif ($Bill->typeOfbill == Bill::typeOfbill_BUY || $Bill->typeOfbill == Bill::typeOfbill_RE_SALE) {
                         if ($Ounit->unit_equal > $old->unit_equal) {
                             $old->Quantity -= $oldQuantity * ($Ounit->unit_equal / $old->unit_equal);
                         } else {
-                            $old->Quantity -= $oldQuantity / ($old->unit_equal / $Ounit->unit_equal);
+                            $old->Quantity -= intval($oldQuantity / ($old->unit_equal / $Ounit->unit_equal));
                         }
                     }
                     $old->save();
@@ -207,11 +207,11 @@ public function store(Request $request)
                         if ($unit->unit_equal > $otherUnit->unit_equal) {
                             $otherUnit->Quantity -= $newQuantity * ($unit->unit_equal / $otherUnit->unit_equal);
                         } else {
-                            $otherUnit->Quantity -= $newQuantity / ($otherUnit->unit_equal / $unit->unit_equal);
+                            $otherUnit->Quantity -= intval($newQuantity / ($otherUnit->unit_equal / $unit->unit_equal));
                         }
                     } elseif ($Bill->typeOfbill == Bill::typeOfbill_BUY || $Bill->typeOfbill == Bill::typeOfbill_RE_SALE) {
                         if ($unit->unit_equal > $otherUnit->unit_equal) {
-                            $otherUnit->Quantity += intval($newQuantity * ($unit->unit_equal / $otherUnit->unit_equal));
+                            $otherUnit->Quantity += ($newQuantity * ($unit->unit_equal / $otherUnit->unit_equal));
                         } else {
                             $otherUnit->Quantity += intval($newQuantity / ($otherUnit->unit_equal / $unit->unit_equal));
                         }
@@ -219,11 +219,11 @@ public function store(Request $request)
                     $otherUnit->save();
                 }
             }
-
+            //return $this->apiresponse($otherUnit, 'Account not found', 404);
             $price = $request->price ?? $bill_detail->price;
             $quantity = $request->quantity ?? $bill_detail->quantity;
             $discount = $request->discount ?? $bill_detail->discount;
-            $discountPercentage = $request->{'discount %'} ?? $bill_detail->{'discount %'};
+            $discountPercentage = $request->{'discount%'} ?? $bill_detail->{'discount%'};
 
             $totalPriceBeforeDiscount = $price * $quantity;
             $totalPriceAfterDiscount = $totalPriceBeforeDiscount - $discount;
@@ -234,7 +234,7 @@ public function store(Request $request)
                 'quantity' => $quantity,
                 'totalPrice' => $totalPriceAfterDiscount,
                 'discount' => $discount,
-                'discount %' => $discountPercentage,
+                'discount%' => $discountPercentage,
                 'note' => $request->note,
                 'unit_id' => $unitId,
                 'material_id' => $materialId,
@@ -247,20 +247,16 @@ public function store(Request $request)
             $Bill->quantity = $totalQuantity;
             $Bill->save();
 
-            if ($request->has('price') && $request->price != $oldPrice) {
-                $this->updateAccounts($Bill, $oldPrice, $request->price);
-            }
-
+            $this->updateAccounts($Bill, $oldPrice, $totalPriceAfterDiscount);
             return $this->apiresponse($bill_detail, 'Bill detail updated successfully', 200);
         });
     }
 
-    private function updateAccounts($Bill, $oldPrice, $newPrice)
+    private function updateAccounts($Bill, $oldPrice, $totalPriceAfterDiscount)
     {
-        $priceDifference = $newPrice - $oldPrice;
+        $priceDifference = $totalPriceAfterDiscount - $oldPrice;
 
-        if (($Bill->typeOfbill == Bill::typeOfbill_SALE && $Bill->typeOfpay == Bill::typeOfpay_CASH) ||
-            ($Bill->typeOfbill == Bill::typeOfbill_RE_BUY && $Bill->typeOfpay == Bill::typeOfpay_CASH)) {
+        if (($Bill->typeOfbill == Bill::typeOfbill_SALE && $Bill->typeOfpay == Bill::typeOfpay_CASH)) {
             $account = Account::find(1);
             if ($account) {
                 $account->account_UP += $priceDifference;
