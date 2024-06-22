@@ -24,6 +24,7 @@ class Bill_details extends Model
         'unit_id',
         'material_id',
         'bill_id',
+        "expier_date",
         'type',
     ];
 

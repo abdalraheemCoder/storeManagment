@@ -40,6 +40,7 @@ class DriverController extends RoutingController
         $validator = Validator::make($request->all(), [
             'driver_name' => 'required|string|max:255|unique:drivers,driver_name',
             'driver_phone' => 'nullable|integer',
+            'driver_commission' => 'nullable|integer',
             'driver_address' => 'nullable|string|max:255',
             'note' => 'nullable|string'
         ]);
@@ -99,6 +100,7 @@ class DriverController extends RoutingController
           $validator = Validator::make($request->all(), [
               'driver_name' => 'sometimes|required|string|max:255|unique:drivers,driver_name,' . $driver->id,
               'driver_phone' => 'sometimes|nullable|integer',
+              'driver_commission' => 'sometimes|nullable|integer',
               'driver_address' => 'sometimes|nullable|string|max:255',
               'note' => 'sometimes|nullable|string'
           ]);
@@ -111,6 +113,7 @@ class DriverController extends RoutingController
               'driver_name',
               'driver_phone',
               'driver_address',
+              'driver_commission',
               'note'
           ]));
 

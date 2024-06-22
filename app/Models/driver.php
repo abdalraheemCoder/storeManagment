@@ -14,6 +14,7 @@ class driver extends Model
         'driver_name',
         'driver_phone',
         'driver_address',
+        'driver_commission',
         'note'];
 
     protected $guarded = ['driver_ID'];

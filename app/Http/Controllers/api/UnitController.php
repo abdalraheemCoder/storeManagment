@@ -22,11 +22,9 @@ class UnitController extends RoutingController
 
     public function store(Request $request)
     {
-
-
-        $validator = Validator::make($request->all(), [
+          $validator = Validator::make($request->all(), [
             'unit_name' => 'required|string',
-            'unit_equal' => 'required|numeric|min:0.000001', 
+            'unit_equal' => 'required|numeric|min:0.000001',
             'unit_mat_id' => 'nullable|exists:materials,id',
             'Quantity' => 'nullable|integer|min:0',
             'Quan_return' => 'nullable|integer|min:0',
@@ -56,21 +54,7 @@ class UnitController extends RoutingController
             'unitbuy_price' => $request->unitbuy_price ?? 0,
         ]);
 
-        if ($unit) {
-            $units = Unit::where('unit_mat_id', $materialId)->where('id', '!=', $unit->id)->get();
-            foreach ($units as $otherUnit) {
-                if ($unit->unit_equal > $otherUnit->unit_equal) {
-                    $otherUnit->Quantity += $unit->Quantity * ($unit->unit_equal / $otherUnit->unit_equal);
-                } else {
-                    $otherUnit->Quantity += $unit->Quantity / ($otherUnit->unit_equal / $unit->unit_equal);
-                }
-                $otherUnit->save();
-            }
-
-            return $this->apiresponse($unit, 'This unit is saved', 201);
-        }
-
-        return $this->apiresponse(null, 'This unit was not saved', 400);
+        return $this->apiresponse($unit, 'This unit  saved', 400);
     }
 
 

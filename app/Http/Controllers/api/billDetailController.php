@@ -51,13 +51,12 @@ public function store(Request $request)
         'discount%' => 'nullable|numeric|min:0',
         'note' => 'nullable|string',
         'unit_id' => 'required|exists:units,id',
-        'material_id' => 'required|exists:materials,id',
+        'material_id' => 'required|exists:materials,id'
     ]);
 
     if ($validator->fails()) {
         return $this->apiresponse(null, $validator->errors(), 400);
     }
-
     return DB::transaction(function () use ($request) {
         $Bill = Bill::latest()->first();
 
@@ -80,7 +79,6 @@ public function store(Request $request)
         } else {
             $defaultPrice = 0;
         }
-
         $price = $request->price ?? $defaultPrice;
         $quantity = $request->quantity;
         $discount = $request->discount ?? 0;
@@ -138,7 +136,7 @@ public function store(Request $request)
 
         $this->StoreAccounts($Bill);
 
-        return $this->apiresponse($Bill, 'This bill_detail is successful', 200);
+        return $this->apiresponse($bill_detail, 'This bill_detail is successful', 200);
     });
 }
     public function update(Request $request, string $id)
@@ -219,7 +217,7 @@ public function store(Request $request)
                     $otherUnit->save();
                 }
             }
-            //return $this->apiresponse($otherUnit, 'Account not found', 404);
+
             $price = $request->price ?? $bill_detail->price;
             $quantity = $request->quantity ?? $bill_detail->quantity;
             $discount = $request->discount ?? $bill_detail->discount;

@@ -15,6 +15,7 @@ return new class extends Migration
             $table->id();
             $table->string('driver_name');
             $table->integer('driver_phone')->nullable();
+            $table->integer('driver_commission')->nullable();
             $table->string('driver_address')->nullable();
             $table->longText('note')->nullable();
             $table->timestamps();

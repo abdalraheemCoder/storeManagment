@@ -40,7 +40,6 @@ class MaterialController extends RoutingController
             'material_name' => 'required|string|max:255|unique:materials,material_name,' ,
             'discount_mat' => 'nullable|numeric|min:0|max:100',
             'note' => 'nullable|string',
-            'expierd_date' => 'nullable|date|after_or_equal:today',
             'category_id' => 'required|exists:categories,id',
         ]);
 
@@ -100,7 +99,6 @@ class MaterialController extends RoutingController
             'material_name' => 'sometimes|required|string|max:255|unique:materials,material_name,' . $id,
             'discount_mat' => 'sometimes|nullable|numeric|min:0|max:100',
             'note' => 'sometimes|nullable|string',
-            'expierd_date' => 'sometimes|nullable|date|after_or_equal:today',
             'category_id' => 'sometimes|required|exists:categories,id',
         ]);
 
@@ -112,14 +110,13 @@ class MaterialController extends RoutingController
             'material_name',
             'discount_mat',
             'note',
-            'expierd_date',
             'category_id',
         ]));
 
         $material->save();
 
         return $this->apiresponse($material, 'This material is updated', 200);
-    
+
     }
 
     /**

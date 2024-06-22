@@ -19,7 +19,6 @@ class material extends Model
     'material_name',
     'discount_mat',
     'note',
-    'expierd_date',
     'category_id'];
 
     public function unit() :HasMany

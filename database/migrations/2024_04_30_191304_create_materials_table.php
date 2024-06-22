@@ -16,7 +16,6 @@ return new class extends Migration
             $table->string('material_name');
             $table->double('discount_mat')->nullable();
             $table->longText('note')->nullable();
-            $table->date('expierd_date')->nullable();
             $table->foreignId('category_id')->constrained('categories');//foreignId
             $table->timestamps();
 
@@ -29,5 +28,6 @@ return new class extends Migration
     public function down(): void
     {
         Schema::dropIfExists('materials');
+
     }
 };
