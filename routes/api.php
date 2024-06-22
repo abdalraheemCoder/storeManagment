@@ -47,14 +47,28 @@ Route::resource('/driver', DriverController::class);
 
 Route::resource('/material', MaterialController::class);
 
+Route::controller(UnitController::class)->group(function () {
+    Route::get('unit', 'index');
+    Route::get('unit/{id}', 'show');
+    Route::post('unit/{id}', 'store');
+    Route::put('unit/{id}', 'update');
+    Route::delete('unit/{id}', 'destroy');
+});
 Route::resource('/supplier', SupplierController::class);
 
 Route::resource('/unit', UnitController::class);
 
 Route::resource('/account', AccountController::class);
 
-Route::resource('/bill_detail', billDetailController::class);
+//Route::resource('/bill_detail', billDetailController::class);
+Route::controller(billDetailController::class)->group(function () {
 
+    Route::get('bill_detail', 'index');
+    Route::get('bill_detail/{id}', 'show');
+    Route::post('bill_detail/{id}', 'store');
+    Route::put('bill_detail/{id}', 'update');
+    Route::delete('bill_detail/{id}', 'destroy');
+});
 
 Route::controller(BondRelationController::class)->group(function () {
 

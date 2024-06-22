@@ -33,29 +33,69 @@ class MaterialController extends RoutingController
     /**
      * Store a newly created resource in storage.
      */
-    public function store(Request $request)
-    {
+    // public function store(Request $request)
+    // {
 
-        $validator = Validator::make($request->all(), [
-            'material_name' => 'required|string|max:255|unique:materials,material_name,' ,
-            'discount_mat' => 'nullable|numeric|min:0|max:100',
-            'note' => 'nullable|string',
-            'category_id' => 'required|exists:categories,id',
+    //     $validator = Validator::make($request->all(), [
+    //         'material_name' => 'required|string|max:255|unique:materials,material_name,' ,
+    //         'discount_mat' => 'nullable|numeric|min:0|max:100',
+    //         'note' => 'nullable|string',
+    //         'category_id' => 'required|exists:categories,id',
+    //     ]);
+
+    //     if ($validator->fails()) {
+    //         return $this->apiresponse(null, $validator->errors(), 400);
+    //     }
+    //     $unit=new unit([
+
+    //     ]);
+    //     $material = Material::create($request->all());
+
+    //     if ($material) {
+    //         return $this->apiresponse($material, 'This material is saved', 201);
+    //     }
+
+    //     return $this->apiresponse(null, 'This material is not saved', 400);
+
+    // }
+    public function store(Request $request)
+{
+    $validator = Validator::make($request->all(), [
+        'material_name' => 'required|string|max:255|unique:materials,material_name',
+        'discount_mat' => 'nullable|numeric|min:0|max:100',
+        'note' => 'nullable|string',
+        'category_id' => 'required|exists:categories,id',
+    ]);
+
+    if ($validator->fails()) {
+        return $this->apiresponse(null, $validator->errors(), 400);
+    }
+
+    $material = Material::create($request->all());
+
+    if ($material) {
+
+        $unit = new Unit([
+            'unit_name' => 'قطعة',
+            'unit_equal' => 1,
+            'Quantity' => 0,
+            'Quan_return' => 0,
+            'unitSalse_price' => 0,
+            'unitbuy_price' => 0,
+            'unit_mat_id' => $material->id
         ]);
 
-        if ($validator->fails()) {
-            return $this->apiresponse(null, $validator->errors(), 400);
+        if ($unit->save()) {
+            return $this->apiresponse($material, 'This material and its default unit are saved', 201);
+        } else {
+
+            $material->delete();
+            return $this->apiresponse(null, 'Failed to save the default unit', 400);
         }
-
-        $material = Material::create($request->all());
-
-        if ($material) {
-            return $this->apiresponse($material, 'This material is saved', 201);
-        }
-
-        return $this->apiresponse(null, 'This material is not saved', 400);
-
     }
+
+    return $this->apiresponse(null, 'This material is not saved', 400);
+}
 
     /**
      * Display the specified resource.

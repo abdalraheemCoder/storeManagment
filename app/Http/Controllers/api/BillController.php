@@ -75,7 +75,7 @@ class BillController extends RoutingController
             'supplier_id'=>$request->supplier_id,
             'note' => $request->note
         ]);
-
+       
         if ($bill->typeOfbill == 'sale' || $bill->typeOfbill == 're_sale') {
             if ($request->has('customer_id')) {
                 $customer = Customer::find($request->customer_id);
@@ -168,7 +168,7 @@ class BillController extends RoutingController
        if ($request->has('note')) {
            $Bill->note = $request->note;
        }
-      
+
 
        if ($request->has('driver_id')) {
            $Bill->driver_id = $request->driver_id;

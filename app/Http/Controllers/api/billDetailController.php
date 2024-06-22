@@ -41,7 +41,7 @@ class billDetailController extends RoutingController
         return $this->apiresponse(null,'This bill_detil Not found ',401);
     }
 
-public function store(Request $request)
+public function store(Request $request ,string $id)
 {
     $validator = Validator::make($request->all(), [
         'price' => 'nullable|integer|min:0',
@@ -57,8 +57,11 @@ public function store(Request $request)
     if ($validator->fails()) {
         return $this->apiresponse(null, $validator->errors(), 400);
     }
-    return DB::transaction(function () use ($request) {
-        $Bill = Bill::latest()->first();
+    return DB::transaction(function () use ($request, $id) {
+        $Bill = Bill::find($id);
+        if (!$Bill) {
+            return response()->json(['error' => 'Bill not found'], 404);
+        }
 
         $unitId = $request->unit_id;
         $materialId = $request->material_id;
@@ -100,6 +103,8 @@ public function store(Request $request)
             'bill_id' => $Bill->id,
             'type' => $Bill->typeOfbill,
         ]);
+
+
         $units = Unit::where('unit_mat_id', $materialId)->get();
         $quantityToAdjust = $quantity;
 
