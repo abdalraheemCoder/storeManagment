@@ -60,7 +60,6 @@ Route::resource('/unit', UnitController::class);
 
 Route::resource('/account', AccountController::class);
 
-//Route::resource('/bill_detail', billDetailController::class);
 Route::controller(billDetailController::class)->group(function () {
 
     Route::get('bill_detail', 'index');
@@ -102,4 +101,6 @@ Route::get('GetDeferredBuyBills', [reportController::class, 'getDeferredBuyBills
 Route::get('GetCashSalesBills', [reportController::class, 'getCashSalesBills']);
 Route::get('GetCashBuyBills', [reportController::class, 'getCashBuyBills']);
 Route::get('accountDetail/{ID}', [reportController::class, 'accountDetail']);
+Route::get('drivers/{driverId}',[reportController::class, 'getDriverCommission']);
+
 

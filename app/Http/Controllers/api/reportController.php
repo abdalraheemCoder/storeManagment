@@ -124,4 +124,43 @@ class reportController extends RoutingController
             return response()->json(['message' => 'Account not found'], 404);
         }
     }
+    public function getDriverCommission(Request $request, $driverId)
+    {
+        $driver = Driver::find($driverId);
+        if (!$driver) {
+            return response()->json(['message' => 'Driver not found'], 404);
+        }
+
+        if (!$driver->driver_commission) {
+            return response()->json(['message' => 'Driver commission not set'], 400);
+        }
+
+        $fromDate = $request->input('fromDate');
+        $toDate = $request->input('toDate');
+
+        $billsQuery = Bill::where('driver_id', $driverId);
+
+        if ($fromDate) {
+            $billsQuery->where('date', '>=', $fromDate);
+        }
+        if ($toDate) {
+            $billsQuery->where('date', '<=', $toDate);
+        }
+
+        $bills = $billsQuery->get();
+
+        $totalCommission = 0;
+        foreach ($bills as $bill) {
+            if ($bill->price) {
+                $commission = ($bill->price * $driver->driver_commission) / 100;
+                $totalCommission += $commission;
+            }
+        }
+
+        return response()->json([
+            'driver' => $driver->driver_name,
+            'totalCommission' => $totalCommission,
+            'numberOfBills' => $bills->count()
+        ], 200);
+    }
 }

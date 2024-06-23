@@ -17,7 +17,6 @@ class material extends Model
 
     protected $fillable = [
     'material_name',
-    'discount_mat',
     'note',
     'category_id'];
 

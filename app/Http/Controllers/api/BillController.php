@@ -75,7 +75,7 @@ class BillController extends RoutingController
             'supplier_id'=>$request->supplier_id,
             'note' => $request->note
         ]);
-       
+
         if ($bill->typeOfbill == 'sale' || $bill->typeOfbill == 're_sale') {
             if ($request->has('customer_id')) {
                 $customer = Customer::find($request->customer_id);
@@ -83,6 +83,14 @@ class BillController extends RoutingController
                     $bill->customer_id = $request->customer_id;
                 } else {
                     return $this->apiresponse(null, ['customer_id' => ['Customer not found']], 400);
+                }
+            }
+            if ($request->has('driver_id')) {
+                $driver = driver::find($request->driver_id);
+                if ($driver) {
+                    $bill->driver_id = $request->driver_id;
+                } else {
+                    return $this->apiresponse(null, ['driver_id' => ['driver not found']], 400);
                 }
             }
         } elseif ($bill->typeOfbill == 'buy' || $bill->typeOfbill == 're_buy') {
@@ -105,6 +113,14 @@ class BillController extends RoutingController
                 return $this->apiresponse(null, $validator->errors(), 400);
             } else {
                 $bill->customer_id = $request->customer_id;
+            }
+            if ($request->has('driver_id')) {
+                $driver = driver::find($request->driver_id);
+                if ($driver) {
+                    $bill->driver_id = $request->driver_id;
+                } else {
+                    return $this->apiresponse(null, ['driver_id' => ['driver not found']], 400);
+                }
             }
         }
 

@@ -33,36 +33,11 @@ class MaterialController extends RoutingController
     /**
      * Store a newly created resource in storage.
      */
-    // public function store(Request $request)
-    // {
 
-    //     $validator = Validator::make($request->all(), [
-    //         'material_name' => 'required|string|max:255|unique:materials,material_name,' ,
-    //         'discount_mat' => 'nullable|numeric|min:0|max:100',
-    //         'note' => 'nullable|string',
-    //         'category_id' => 'required|exists:categories,id',
-    //     ]);
-
-    //     if ($validator->fails()) {
-    //         return $this->apiresponse(null, $validator->errors(), 400);
-    //     }
-    //     $unit=new unit([
-
-    //     ]);
-    //     $material = Material::create($request->all());
-
-    //     if ($material) {
-    //         return $this->apiresponse($material, 'This material is saved', 201);
-    //     }
-
-    //     return $this->apiresponse(null, 'This material is not saved', 400);
-
-    // }
     public function store(Request $request)
 {
     $validator = Validator::make($request->all(), [
         'material_name' => 'required|string|max:255|unique:materials,material_name',
-        'discount_mat' => 'nullable|numeric|min:0|max:100',
         'note' => 'nullable|string',
         'category_id' => 'required|exists:categories,id',
     ]);
@@ -137,7 +112,6 @@ class MaterialController extends RoutingController
 
         $validator = Validator::make($request->all(), [
             'material_name' => 'sometimes|required|string|max:255|unique:materials,material_name,' . $id,
-            'discount_mat' => 'sometimes|nullable|numeric|min:0|max:100',
             'note' => 'sometimes|nullable|string',
             'category_id' => 'sometimes|required|exists:categories,id',
         ]);
@@ -148,7 +122,6 @@ class MaterialController extends RoutingController
 
         $material->fill($request->only([
             'material_name',
-            'discount_mat',
             'note',
             'category_id',
         ]));
