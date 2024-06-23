@@ -16,9 +16,8 @@ return new class extends Migration
             $table->string('material_name');
             $table->double('discount_mat')->nullable();
             $table->longText('note')->nullable();
-            $table->foreignId('category_id')->constrained('categories');//foreignId
+            $table->foreignId('category_id')->constrained('categories')->onDelete('cascade');
             $table->timestamps();
-
         });
     }
 

@@ -49,8 +49,8 @@ Route::resource('/material', MaterialController::class);
 
 Route::controller(UnitController::class)->group(function () {
     Route::get('unit', 'index');
-    Route::get('unit/{id}', 'show');
-    Route::post('unit/{id}', 'store');
+    Route::get('unit/show/{id}', 'show');
+    Route::post('unit/post/{id}', 'store');
     Route::put('unit/{id}', 'update');
     Route::delete('unit/{id}', 'destroy');
 });

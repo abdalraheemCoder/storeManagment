@@ -62,10 +62,6 @@ class MaterialController extends RoutingController
 
         if ($unit->save()) {
             return $this->apiresponse($material, 'This material and its default unit are saved', 201);
-        } else {
-
-            $material->delete();
-            return $this->apiresponse(null, 'Failed to save the default unit', 400);
         }
     }
 
@@ -137,19 +133,16 @@ class MaterialController extends RoutingController
      */
     public function destroy(string $id)
     {
-        $material = material::find($id);
-        if (!$id) {
-            return $this->apiresponse(null,'This id Not found ',401);
+        $material = Material::find($id);
+
+        if (!$material) {
+            return $this->apiresponse(null, 'Material Not found', 404);
         }
 
-        if ( !$material) {
-            return $this->apiresponse(null,'This material Not found to deleted ',401);
-        }
+        //$material->units()->delete();
 
-        $material->delete($id);
+        $material->delete();
 
-        if ($material) {
-            return $this->apiresponse($material,'This material is deleted ',200);
-        }
+        return $this->apiresponse(null, 'Material and associated units deleted successfully', 200);
     }
 }

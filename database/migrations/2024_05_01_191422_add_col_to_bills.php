@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::table('bills', function (Blueprint $table) {
             // $table->foreignId('customer_id')->constrained('customers');
-             $table->foreignId('supplier_id')->nullable()->constrained('suppliers');
+             $table->foreignId('supplier_id')->nullable()->constrained('suppliers')->onDelete('cascade');
 
             //$table->string('billType')->default('salse');
         });

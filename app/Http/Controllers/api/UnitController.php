@@ -20,6 +20,18 @@ class UnitController extends RoutingController
         return $this->apiresponse($unit,'This all unit ',200);
     }
 
+    public function show(string $id)
+    {
+        $unit = unit::find($id);
+        if (!$id) {
+            return $this->apiresponse(null,'This id Not found ',401);
+        }
+        if ($unit) {
+          return $this->apiresponse($unit,'This your Bills ',200);
+        }
+        return $this->apiresponse(null,'This Bill Not found ',401);
+    }
+
     public function store(Request $request, string $id)
 {
     $validator = Validator::make($request->all(), [
@@ -57,9 +69,6 @@ class UnitController extends RoutingController
 
     return $this->apiresponse($unit, 'This unit saved', 200);
 }
-
-
-
 
     public function update(Request $request, string $id)
     {

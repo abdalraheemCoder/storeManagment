@@ -472,19 +472,9 @@ class BillController extends RoutingController
                     $accountCustomer->save();
                 }
             }
-            // Handle other bill types similarly (re_sale, buy, re_buy)
+            
         }
-    }// } else {
-    //     // No discount or discount_percentage changes, simply update the bill details
-    //     $fieldsToUpdate = ['date', 'typeOfbill', 'typeOfpay', 'note', 'driver_id', 'customer_id', 'supplier_id'];
-    //     foreach ($fieldsToUpdate as $field) {
-    //         if ($request->has($field)) {
-    //             $Bill->{$field} = $request->{$field};
-    //         }
-    //     }
-
-    //     $Bill->save();
-    // }
+    }
       $Bill->save();
 
 

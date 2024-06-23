@@ -26,8 +26,8 @@ return new class extends Migration
             $table->longText('note')->nullable();
             // $table->double('discount % ')->nullable();
             //$table->date('expier_date')->nullable();
-            $table->foreignId('customer_id')->nullable()->constrained('customers');
-            $table->foreignId('driver_id')->nullable()->constrained('drivers');
+            $table->foreignId('customer_id')->nullable()->constrained('customers')->onDelete('cascade');
+            $table->foreignId('driver_id')->nullable()->constrained('drivers')->onDelete('cascade');
             //$table->foreignId('supplier_id')->nullable()->constrained('suppliers');
             $table->timestamps();
         });

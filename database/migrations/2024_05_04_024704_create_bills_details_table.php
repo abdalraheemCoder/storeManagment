@@ -19,9 +19,9 @@ return new class extends Migration
             // $table->double('discount % ')->default(0);
             // $table->double('totalPrice')->default(0);
             $table->longText('note')->nullable();
-            $table->foreignId('unit_id')->constrained('units');
-            $table->foreignId('material_id')->constrained('materials');
-            $table->foreignId('bill_id')->constrained('bills');
+            $table->foreignId('unit_id')->constrained('units')->onDelete('cascade');
+            $table->foreignId('material_id')->constrained('materials')->onDelete('cascade');
+            $table->foreignId('bill_id')->constrained('bills')->onDelete('cascade');
             $table->enum('type', ['buy', 'sale','re_sale','re_buy']);
             $table->timestamps();
         });

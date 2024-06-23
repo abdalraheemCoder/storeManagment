@@ -126,20 +126,18 @@ class CategoryController extends RoutingController
      */
     public function destroy(string $id)
     {
-        $category = category::find($id);
-        if (!$id) {
-            return $this->apiresponse(null,'This id Not found ',401);
+        $category = Category::find($id);
+
+
+        if (!$category) {
+            return $this->apiresponse(null, 'This category Not found to delete', 404);
         }
 
-        if ( !$category) {
-            return $this->apiresponse(null,'This category Not found to deleted ',401);
+        if ($category->materials()->count() > 0) {
+            return $this->apiresponse(null, 'Cannot delete category. It has associated materials', 401);
         }
+        $category->delete();
 
-        $category->delete($id);
-
-        if ($category) {
-            return $this->apiresponse($category,'This category is deleted ',200);
-
-        }
+        return $this->apiresponse($category, 'Category deleted successfully', 200);
     }
 }
