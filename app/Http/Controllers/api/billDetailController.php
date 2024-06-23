@@ -476,7 +476,6 @@ if (($Bill->typeOfbill == Bill::typeOfbill_BUY && $Bill->typeOfpay == Bill::type
             } else {
                 return $this->apiresponse(null, 'Account not found', 404);
             }
-
         }
         $sPriceDetail = Bill_details::where('bill_id', $Bill->id)->where('type', 're_buy')->first();
         $account = Account::find(1);

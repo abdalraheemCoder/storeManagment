@@ -60,12 +60,27 @@ class BondRelationController extends RoutingController
             if ($customerAccountId) {
                 $account = $this->handleBondRelation($bill, $customerAccountId, $request->value, 'receipt');
             }
-        } elseif ($bill->typeOfbill == Bill::typeOfbill_BUY) {
+        }
+        elseif ($bill->typeOfbill == Bill::typeOfbill_BUY) {
             $supplierAccountId = $this->getSupplierAccountId($bill->id);
             if ($supplierAccountId) {
                 $account = $this->handleBondRelation($bill, $supplierAccountId, $request->value, 'payment');
             }
         }
+        //
+        if ($bill->typeOfbill == Bill::typeOfbill_RE_SALE) {
+            $customerAccountId = $this->getCustomerAccountId($bill->id);
+            if ($customerAccountId) {
+                $account = $this->handleBondRelation($bill, $customerAccountId, $request->value, 'payment');
+            }
+        }
+        elseif ($bill->typeOfbill == Bill::typeOfbill_RE_BUY) {
+            $supplierAccountId = $this->getSupplierAccountId($bill->id);
+            if ($supplierAccountId) {
+                $account = $this->handleBondRelation($bill, $supplierAccountId, $request->value, 'receipt');
+            }
+        }
+        //
 
         if ($account) {
             $this->updateAccount($account, $bill, $request->value);
@@ -132,6 +147,15 @@ class BondRelationController extends RoutingController
                 $account->account_UP += $value;
             }
         }
+        if ($bill->typeOfbill == Bill::typeOfbill_RE_BUY) {
+            if ($account->account_DOWN <= $account->account_UP) {
+                $account->account_DOWN += $value;
+            }
+        } elseif ($bill->typeOfbill == Bill::typeOfbill_RE_SALE) {
+            if ($account->account_UP <= $account->account_DOWN) {
+                $account->account_UP += $value;
+            }
+        }
         $account->save();
     }
 
@@ -144,6 +168,15 @@ class BondRelationController extends RoutingController
                     $mainAccount->account_UP += $value;
                 }
             } elseif ($bill->typeOfbill == Bill::typeOfbill_BUY) {
+                if ($mainAccount->account_DOWN <= $mainAccount->account_UP) {
+                    $mainAccount->account_DOWN += $value;
+                }
+            }
+            if ($bill->typeOfbill == Bill::typeOfbill_RE_BUY) {
+                if ($mainAccount->account_UP <= $mainAccount->account_DOWN) {
+                    $mainAccount->account_UP += $value;
+                }
+            } elseif ($bill->typeOfbill == Bill::typeOfbill_RE_SALE) {
                 if ($mainAccount->account_DOWN <= $mainAccount->account_UP) {
                     $mainAccount->account_DOWN += $value;
                 }
